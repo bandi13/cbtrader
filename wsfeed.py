@@ -151,7 +151,7 @@ class myWebsocketClient(cbpro.WebsocketClient):
             elif action == "sell":
               self.buyCount = 0
               if (currentBTC != 0) and (self.currentPriceBTCUSD - self.fee > self.lastBuyPriceBTC + self.fee):
-                currentUSD = currentBTC * (self.currentPriceBTCUSD - self.fee)
+                currentUSD = round(currentBTC * (self.currentPriceBTCUSD - self.fee),2)
                 currentBTC = 0.0
                 print("sold for $", currentUSD, " at ", self.currentPriceBTCUSD - self.fee)
             else:
