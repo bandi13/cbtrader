@@ -141,7 +141,7 @@ class myWebsocketClient(cbpro.WebsocketClient):
             self.data = self.data[-NUMPOINTS:] # last NUMPOINTS elements
             action = buysell(self.data, 0.1)
             if action == "buy":
-              if currentUSD != 0:
+              if (currentUSD != 0) and ((self.lastBuyPriceBTC == 0) or (self.currentPriceBTCUSD - self.fee < self.lastBuyPriceBTC + self.fee)):
                 self.buyCount = self.buyCount + 1
                 if self.buyCount > NUMPOINTS / 10:
                   currentBTC = currentUSD / (self.currentPriceBTCUSD + self.fee)
