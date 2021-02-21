@@ -135,7 +135,8 @@ class myWebsocketClient(cbpro.WebsocketClient):
           print ("Error: ", msg)
         elif msg["type"] == "ticker":
           self.currentPriceBTCUSD = float(msg["price"])
-#          print (msg["product_id"], " ", msg["side"], "\t@ {:.3f}".format(self.currentPriceBTCUSD))
+          with open('prices.txt','a') as f:
+            print (msg["product_id"], " ", msg["side"], "\t@ {:.3f}".format(self.currentPriceBTCUSD), file=f)
           self.data.append(self.currentPriceBTCUSD)
           if len(self.data) > NUMPOINTS:
             self.data = self.data[-NUMPOINTS:] # last NUMPOINTS elements
