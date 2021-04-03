@@ -86,7 +86,8 @@ def trainPerceptron(NUMPOINTS=21):
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(0)
-  tmparr[NUMPOINTS - 2] = 0.5
+  tmparr[NUMPOINTS - 2] = 1
+  tmparr[NUMPOINTS - 1] = 0.75
   print("f(x)=(x=n-1)?1:0 : ", tmparr, "->", n.predict(np.array(tmparr)))
 
   tmparr = []
