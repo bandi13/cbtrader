@@ -195,7 +195,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdate
 x = mdate.epoch2num(column(rates,0)[0:NUMPOINTS])
 y = column(rates,3)[0:NUMPOINTS]
-action = buysell(y, 0.02)
+action = buysell(y, 0.06)
 print ("x (",len(x),"):", x)
 print ("y (",len(y),"):", y)
 print ("action: ", action)
