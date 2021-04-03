@@ -184,7 +184,9 @@ def column(matrix, i):
   return [row[i] for row in matrix]
 
 rates = client.get_product_historic_rates('ETH-USD', granularity=3600)
+rates = rates[::-1] # reverse order so it goes in chronological order
 #print ("rates",rates)
+print ("time",column(rates,0))
 print ("rates",column(rates,3))
 
 import matplotlib as mpl
