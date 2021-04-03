@@ -22,7 +22,7 @@ class NN:
         s2=sigmoid(np.dot(s1, self.wh))
         return s2
 
-    def train(self, inputs, outputs, it=100000, sensitivity=0.001):
+    def train(self, inputs, outputs, it=1000000, sensitivity=0.001):
         for i in range(it):
             l0=inputs
             l1=sigmoid(np.dot(l0, self.wi))
