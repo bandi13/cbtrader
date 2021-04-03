@@ -169,13 +169,52 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 NUMPOINTS = 40
 n = trainPerceptron(NUMPOINTS)
 
-currentUSD = 100.0
-currentBTC = 0.0
+#currentUSD = 100.0
+#currentBTC = 0.0
 
-wsClient = myWebsocketClient()
-wsClient.start()
-print(wsClient.url, wsClient.products)
-while (1):
-  print ("message_count =", "{}".format(wsClient.message_count),". Assets: $", "{:.2f}".format(currentUSD + wsClient.currentPriceBTCUSD * currentBTC))
-  time.sleep(10)
-wsClient.close()
+#rates = cbpro_client.get_product_historic_rates('BTC-USD')
+#print ("Rates=",rates)
+
+from cbpro_client import get_client
+
+client = get_client()
+
+def column(matrix, i):
+  return [row[i] for row in matrix]
+
+rates = client.get_product_historic_rates('ETH-USD', granularity=3600)
+#print ("rates",rates)
+print ("rates",column(rates,3))
+
+import matplotlib as mpl
+mpl.use('agg')
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdate
+x = mdate.epoch2num(column(rates,0)[0:NUMPOINTS])
+y = column(rates,3)[0:NUMPOINTS]
+action = buysell(y, 0.02)
+print ("x (",len(x),"):", x)
+print ("y (",len(y),"):", y)
+print ("action: ", action)
+fig, ax = plt.subplots()
+ax.plot_date(x,y)
+# Choose your xtick format string
+date_fmt = '%y-%m-%d %H:%M:%S'
+
+# Use a DateFormatter to set the data to the correct format.
+date_formatter = mdate.DateFormatter(date_fmt)
+ax.xaxis.set_major_formatter(date_formatter)
+
+# Sets the tick labels diagonal so they fit easier.
+fig.autofmt_xdate()
+plt.savefig('tmp.png')
+
+
+#wsClient = myWebsocketClient()
+#wsClient.start()
+#print(wsClient.url, wsClient.products)
+#while (1):
+#  print ("message_count =", "{}".format(wsClient.message_count),". Assets: $", "{:.2f}".format(currentUSD + wsClient.currentPriceBTCUSD * currentBTC))
+#  time.sleep(10)
+#wsClient.close()
+
