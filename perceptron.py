@@ -46,6 +46,12 @@ class NN:
         s2=sigmoid(np.dot(s1, self.wh))
         return s2
 
+    def printNN(self):
+        print ("l=",self.l)
+        print ("li=",self.li)
+        print ("wi=",self.wi)
+        print ("wh=",self.wh)
+
 #inputs=np.array([[0,0], [0,1], [1,0], [1,1] ])
 #outputs=np.array([ [0], [1],[1],[0] ])
 #
