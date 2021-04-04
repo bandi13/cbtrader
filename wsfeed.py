@@ -169,7 +169,7 @@ def mainFunc():
     action = getAction(client, exchange, n, n.getNumPoints(), True)
     print (exchange,"->",action)
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
