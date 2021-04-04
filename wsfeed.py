@@ -106,8 +106,8 @@ def buysell(nn, data, sensitivity):
 def column(matrix, i):
   return [row[i] for row in matrix]
 
-def getAction(exchange, nn, NUMPOINTS, savePlot=False):
-  rates = get_client().get_product_historic_rates(exchange, granularity=3600)
+def getAction(product_id, nn, NUMPOINTS, savePlot=False):
+  rates = get_client().get_product_historic_rates(product_id, granularity=3600)
   rates = rates[::-1] # reverse order so it goes in chronological order
 
   y = column(rates,3)[-NUMPOINTS:]
@@ -134,9 +134,55 @@ def getAction(exchange, nn, NUMPOINTS, savePlot=False):
 
     # Sets the tick labels diagonal so they fit easier.
     fig.autofmt_xdate()
-    fig.savefig('prices-'+exchange+'.png')
+    fig.savefig('prices-'+product_id+'.png')
 
   return action
+
+def getBaseFunds(base):
+  accounts = get_client().get_accounts()
+  for acct in accounts:
+    if acct['currency'] == base:
+      return float(acct['available'])
+  return -1
+
+def getDCAPrice(base,currency,available):
+  if available == 0:
+    return 0
+
+  fills = get_client().get_fills(product_id=currency+'-'+base)
+  cost = 0
+  totalSize = 0
+  for fill in fills:
+    if totalSize >= available:
+      break
+    if fill['side'] == "buy":
+      cost = cost + float(fill['price']) * float(fill['size']) + float(fill['fee'])
+      totalSize = totalSize + float(fill['size'])
+
+  if totalSize < available:
+    logging.warning("Unreliable price for "+currency+". Using $0.")
+    return 0
+
+  return cost / available
+
+def getCurPrice(product_id):
+  return get_client().get_product_ticker(product_id=product_id)['price']
+
+def getAvailable(currency):
+  accounts = get_client().get_accounts()
+  for acct in accounts:
+    if acct['currency'] == currency: # Found it
+      return float(acct['available'])
+  return 0
+
+def getInvestmentValue(exchanges):
+  accounts = get_client().get_accounts()
+  total = 0
+  for acct in accounts:
+    if float(acct['available']) != 0 and acct['currency'] in exchanges:
+      dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
+      total = total + float(acct['available'])*dcaPrice
+  return total
 
 def mainFunc(base, exchanges):
   logging.info("Loading Perceptron...")
@@ -162,34 +208,30 @@ def mainFunc(base, exchanges):
 
   logging.info("Calculating actions...")
   for exchange in exchanges:
-    action = getAction(exchange+'-'+base, n, n.getNumPoints(), True)
-    print (exchange,"->",action)
+    product_id = exchange+'-'+base
+    action = getAction(product_id, n, n.getNumPoints(), True)
+    print (product_id,"->",action)
+    if action == 'buy':
+      available = getAvailable(exchange)
+      if (available * getDCAPrice(base,exchange, available)) / (getInvestmentValue(exchanges) + getBaseFunds(base)) < 0.5: # Only if our portfolio has less than 50% of product_id
+        amount = 0.05 * getBaseFunds(base)
+        print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
+    elif action == 'sell':
+      available = getAvailable(exchange)
+      if available != 0: # Has money in it
+        curPrice = getCurPrice(product_id)
+        if curPrice > getDCAPrice(base,exchange,available): # Worthwhile selling
+          print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice + 0.05))
 
-def getBaseFunds(base):
-  accounts = get_client().get_accounts()
-  for acct in accounts:
-    if acct['currency'] == base:
-      return acct['available']
-  return -1
-
-def getDCAPrice(base,currency,available):
-  fills = get_client().get_fills(product_id=currency+'-'+base)
-  cost = 0
-  totalSize = 0
-  for fill in fills:
-    if fill['side'] == "buy":
-      cost = cost + float(fill['price']) * float(fill['size']) + float(fill['fee'])
-      totalSize = totalSize + float(fill['size'])
-    if totalSize >= available:
-      break
-
-  return cost / available
 
 def secondFunc(base, exchanges):
+  portfolioValue = getInvestmentValue(exchanges) + getBaseFunds(base)
   accounts = get_client().get_accounts()
   for acct in accounts:
     if float(acct['available']) != 0 and acct['currency'] in exchanges:
-      print (acct['currency']+": "+acct['available']+" @ "+str(getDCAPrice(base,acct['currency'],float(acct['available']))))
+      dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
+      value = float(acct['available'])*dcaPrice
+      print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(value)+" ("+str(100 * value / portfolioValue)+"%)")
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -199,5 +241,5 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 base = 'USD'
 exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'KNC', 'DASH', 'SUSHI']
 mainFunc(base, exchanges)
-print ("Funds available: "+getBaseFunds(base))
+print ("Funds available: "+str(getBaseFunds(base)))
 secondFunc(base, exchanges)
