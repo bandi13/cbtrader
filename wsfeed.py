@@ -49,8 +49,8 @@ def trainPerceptron(NUMPOINTS=21):
   sensitivity = 0.02
   n=NN(inputs, outputs, sensitivity=sensitivity)
   predictions = n.predict(inputs)
-  logging.info("Predicted:",predictions.T)
-  logging.info("Expected: ",outputs.T)
+  logging.info("Predicted:"+str(predictions.T))
+  logging.info("Expected: "+str(outputs.T))
   for i in range(len(outputs.T)):
     if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity + 0.01:
       logging.warning("Training failure: i=",i)
@@ -95,7 +95,7 @@ def buysell(nn, data, sensitivity):
 #  print("min: ",minData, " max:", maxData)
   data = (np.array(data) - minData) / (maxData - minData)
   predict = nn.predict(data)
-  logging.info("Stocks : ", data, "->", predict)
+  logging.debug("Stocks : ", data, "->", predict)
   if predict > 1.0 - sensitivity:
     return "sell"
   elif predict < sensitivity:
@@ -113,8 +113,8 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
   y = column(rates,3)[-NUMPOINTS:]
 
   action = buysell(nn, y, 0.06)
-  logging.info("y (",len(y),"):", y)
-  logging.info("action: ", action)
+  logging.info("y ("+str(len(y))+"):"+str(y))
+  logging.info("action: " + action)
 
   if savePlot == True:
     import matplotlib as mpl
@@ -122,7 +122,7 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdate
     x = mdate.epoch2num(column(rates,0)[-NUMPOINTS:])
-    logging.info("x (",len(x),"):", x)
+    logging.info("x ("+str(len(x))+"):"+str(x))
     fig, ax = plt.subplots()
     ax.plot_date(x,y)
     # Choose your xtick format string
@@ -139,6 +139,7 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
   return action
 
 def mainFunc():
+  logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
   except ModuleNotFoundError:
@@ -147,7 +148,7 @@ def mainFunc():
   filename='perceptron.obj'
   import os.path
   if os.path.exists(filename):
-    logging.info("Using existing perceptron from ",filename)
+    logging.info("Using existing perceptron from "+filename)
     with open(filename,'rb') as input:
       n = pickle.load(input)
   else:
@@ -157,16 +158,18 @@ def mainFunc():
     with open(filename, 'wb') as output:
       pickle.dump(n, output)
 
-  n.printNN()
+  #n.printNN()
 
+  logging.info("Connecting to Coinbase...")
   from cbpro_client import get_client
   client = get_client()
 
+  logging.info("Calculating actions...")
   for exchange in ['BTC-USD', 'ETH-USD', 'ADA-USD', 'LINK-USD', 'KNC-USD', 'DASH-USD']:
     action = getAction(client, exchange, n, n.getNumPoints(), True)
     print (exchange,"->",action)
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
