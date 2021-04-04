@@ -34,33 +34,6 @@ def trainPerceptron(NUMPOINTS=21):
   inputs.append(tmparr)
   outputs.append([val])
 
-  # tmparr = []
-  # for i in range(NUMPOINTS):
-  #     tmparr.append(0.5)
-  # val = 0.5
-
-  # logging.debug("f(x)=0.5 : ", tmparr, "->", val)
-  # inputs.append(tmparr)
-  # outputs.append([val])
-
-  # tmparr = []
-  # for i in range(NUMPOINTS):
-  #     tmparr.append(0)
-  # val = 0.5
-
-  # logging.debug("f(x)=0 : ", tmparr, "->", val)
-  # inputs.append(tmparr)
-  # outputs.append([val])
-
-  # tmparr = []
-  # for i in range(NUMPOINTS):
-  #     tmparr.append(1)
-  # val = 0.5
-
-  # logging.debug("f(x)=1 : ", tmparr, "->", val)
-  # inputs.append(tmparr)
-  # outputs.append([val])
-
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(1.0 - float(i) / (NUMPOINTS - 1))
