@@ -169,6 +169,11 @@ def mainFunc():
     action = getAction(client, exchange, n, n.getNumPoints(), True)
     print (exchange,"->",action)
 
+  accounts = client.get_accounts()
+  for acct in accounts:
+    if float(acct['available']) != 0:
+      print (acct['currency']+": "+acct['available'])
+
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
