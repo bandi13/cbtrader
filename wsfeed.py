@@ -1,6 +1,7 @@
 import cbpro, time
 import numpy as np
 from perceptron import NN
+import logging
 
 def trainPerceptron(NUMPOINTS=21):
   inputs = []
@@ -11,7 +12,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(float(i) / (NUMPOINTS - 1))
   val = 1
 
-  print("f(x)=x : ",tmparr, "->", val)
+  logging.debug("f(x)=x : ",tmparr, "->", val)
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -20,7 +21,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(0.5 + np.sin(2 * np.pi * float(i) / (NUMPOINTS - 1)) / 2)
   val = 0.5
 
-  print("f(x)=sin(2*pi*x) :", tmparr, "->", val)
+  logging.debug("f(x)=sin(2*pi*x) :", tmparr, "->", val)
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -29,7 +30,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(0.5 + np.cos(2 * np.pi * float(i) / (NUMPOINTS - 1)) / 2)
   val = 0.5
 
-  print("f(x)=cos(2*pi*x) :", tmparr, "->", val)
+  logging.debug("f(x)=cos(2*pi*x) :", tmparr, "->", val)
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -38,7 +39,7 @@ def trainPerceptron(NUMPOINTS=21):
   #     tmparr.append(0.5)
   # val = 0.5
 
-  # print("f(x)=0.5 : ", tmparr, "->", val)
+  # logging.debug("f(x)=0.5 : ", tmparr, "->", val)
   # inputs.append(tmparr)
   # outputs.append([val])
 
@@ -47,7 +48,7 @@ def trainPerceptron(NUMPOINTS=21):
   #     tmparr.append(0)
   # val = 0.5
 
-  # print("f(x)=0 : ", tmparr, "->", val)
+  # logging.debug("f(x)=0 : ", tmparr, "->", val)
   # inputs.append(tmparr)
   # outputs.append([val])
 
@@ -56,7 +57,7 @@ def trainPerceptron(NUMPOINTS=21):
   #     tmparr.append(1)
   # val = 0.5
 
-  # print("f(x)=1 : ", tmparr, "->", val)
+  # logging.debug("f(x)=1 : ", tmparr, "->", val)
   # inputs.append(tmparr)
   # outputs.append([val])
 
@@ -65,7 +66,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(1.0 - float(i) / (NUMPOINTS - 1))
   val = 0
 
-  print("f(x)=1-x : ", tmparr, "->", val)
+  logging.debug("f(x)=1-x : ", tmparr, "->", val)
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -74,26 +75,44 @@ def trainPerceptron(NUMPOINTS=21):
 
   n=NN(inputs)
   # print(n.predict(inputs).T) # Before training
-  n.train(inputs, outputs, sensitivity=0.02)
-  print("Predicted:",n.predict(inputs).T)
-  print("Expected: ",outputs.T)
+  sensitivity = 0.02
+  n.train(inputs, outputs, sensitivity=sensitivity)
+  predictions = n.predict(inputs)
+  logging.info("Predicted:",predictions.T)
+  logging.info("Expected: ",outputs.T)
+  for i in range(len(outputs.T)):
+    if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity + 0.01:
+      logging.warning("Training failure: i=",i)
+      return None
 
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append((float(i) / (NUMPOINTS - 1)) / 2)
-  print("f(x)=x/2 : ", tmparr, "->", n.predict(np.array(tmparr)))
+  predictions = n.predict(np.array(tmparr))
+  if abs(predictions.T[0] - 1) > 0.25:
+    logging.debug("f(x)=x/2 : ", tmparr, "->", predictions)
+    logging.warning("Training failure: f(x)=x/2")
+    return None
 
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(0)
   tmparr[NUMPOINTS - 2] = 1
   tmparr[NUMPOINTS - 1] = 0.75
-  print("f(x)=(x=n-1)?1:0 : ", tmparr, "->", n.predict(np.array(tmparr)))
+  predictions = n.predict(np.array(tmparr))
+  if abs(predictions.T[0] - 1) > 0.25:
+    logging.debug("f(x)=(x=n-1)?1:0 : ", tmparr, "->", predictions)
+    logging.warning("Training failure: f(x)=(x=n-1)?1:0")
+    return None
 
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(0)
-  print("f(x)=0 : ", tmparr, "->", n.predict(np.array(tmparr)))
+  predictions = n.predict(np.array(tmparr))
+  if abs(predictions.T[0] - 0.5) > 0.25:
+    logging.debug("f(x)=0 : ", tmparr, "->", predictions)
+    logging.warning("Training failure: f(x)=0")
+    return None
 
   return n
 
@@ -105,7 +124,7 @@ def buysell(data, sensitivity):
 #  print("min: ",minData, " max:", maxData)
   data = (np.array(data) - minData) / (maxData - minData)
   predict = n.predict(data)
-#  print("Stocks : ", data, "->", predict)
+  logging.info("Stocks : ", data, "->", predict)
   if predict > 1.0 - sensitivity:
     return "sell"
   elif predict < sensitivity:
@@ -164,6 +183,8 @@ class myWebsocketClient(cbpro.WebsocketClient):
       print("-- Goodbye! --")
 
 
+logging.basicConfig(level=logging.WARNING)
+
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
@@ -185,9 +206,6 @@ def column(matrix, i):
 
 rates = client.get_product_historic_rates('ETH-USD', granularity=3600)
 rates = rates[::-1] # reverse order so it goes in chronological order
-#print ("rates",rates)
-print ("time",column(rates,0))
-print ("rates",column(rates,3))
 
 import matplotlib as mpl
 mpl.use('agg')
@@ -196,9 +214,9 @@ import matplotlib.dates as mdate
 x = mdate.epoch2num(column(rates,0)[0:NUMPOINTS])
 y = column(rates,3)[0:NUMPOINTS]
 action = buysell(y, 0.06)
-print ("x (",len(x),"):", x)
-print ("y (",len(y),"):", y)
-print ("action: ", action)
+logging.info("x (",len(x),"):", x)
+logging.info("y (",len(y),"):", y)
+logging.info("action: ", action)
 fig, ax = plt.subplots()
 ax.plot_date(x,y)
 # Choose your xtick format string
