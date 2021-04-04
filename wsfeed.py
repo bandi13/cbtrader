@@ -139,14 +139,31 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
   return action
 
 def mainFunc():
-  NUMPOINTS = 40
-  n = trainPerceptron(NUMPOINTS)
+  try:
+    import cPickle as pickle
+  except ModuleNotFoundError:
+    import pickle
+
+  filename='perceptron.obj'
+  import os.path
+  if os.path.exists(filename):
+    logging.info("Using existing perceptron from ",filename)
+    with open(filename,'rb') as input:
+      n = pickle.load(input)
+  else:
+    logging.info("Using new perceptron")
+    NUMPOINTS = 40
+    n = trainPerceptron(NUMPOINTS)
+    with open(filename, 'wb') as output:
+      pickle.dump(n, output)
+
+  n.printNN()
 
   from cbpro_client import get_client
   client = get_client()
 
   for exchange in ['BTC-USD', 'ETH-USD', 'ADA-USD', 'LINK-USD', 'KNC-USD', 'DASH-USD']:
-    action = getAction(client, exchange, n, NUMPOINTS, True)
+    action = getAction(client, exchange, n, n.getNumPoints(), True)
     print (exchange,"->",action)
 
 logging.basicConfig(level=logging.WARNING)

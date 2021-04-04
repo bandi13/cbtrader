@@ -38,6 +38,9 @@ class NN:
                 logging.info("Early training exit ", np.amax(l2_err), " and ", np.amax(l1_err), " at ", i)
                 break
 
+    def getNumPoints(self):
+        return self.li
+        
     def predict(self, inp):
         s1=sigmoid(np.dot(inp, self.wi))
         s2=sigmoid(np.dot(s1, self.wh))
