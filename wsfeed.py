@@ -89,14 +89,14 @@ def trainPerceptron(NUMPOINTS=21):
 
   return n
 
-def buysell(data, sensitivity):
+def buysell(nn, data, sensitivity):
   minData = min(data)
   maxData = max(data)
   if maxData == minData:
     return "none"
 #  print("min: ",minData, " max:", maxData)
   data = (np.array(data) - minData) / (maxData - minData)
-  predict = n.predict(data)
+  predict = nn.predict(data)
   logging.info("Stocks : ", data, "->", predict)
   if predict > 1.0 - sensitivity:
     return "sell"
@@ -105,44 +105,55 @@ def buysell(data, sensitivity):
   else:
     return "none"
 
+def column(matrix, i):
+  return [row[i] for row in matrix]
+
+def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
+  rates = client.get_product_historic_rates(exchange, granularity=3600)
+  rates = rates[::-1] # reverse order so it goes in chronological order
+
+  y = column(rates,3)[-NUMPOINTS:]
+
+  action = buysell(nn, y, 0.06)
+  logging.info("y (",len(y),"):", y)
+  logging.info("action: ", action)
+
+  if savePlot == True:
+    import matplotlib as mpl
+    mpl.use('agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdate
+    x = mdate.epoch2num(column(rates,0)[-NUMPOINTS:])
+    logging.info("x (",len(x),"):", x)
+    fig, ax = plt.subplots()
+    ax.plot_date(x,y)
+    # Choose your xtick format string
+    date_fmt = '%y-%m-%d %H:%M:%S'
+
+    # Use a DateFormatter to set the data to the correct format.
+    date_formatter = mdate.DateFormatter(date_fmt)
+    ax.xaxis.set_major_formatter(date_formatter)
+
+    # Sets the tick labels diagonal so they fit easier.
+    fig.autofmt_xdate()
+    fig.savefig(exchange+'.png')
+
+  return action
+
+def mainFunc():
+  NUMPOINTS = 40
+  n = trainPerceptron(NUMPOINTS)
+
+  from cbpro_client import get_client
+  client = get_client()
+
+  for exchange in ['BTC-USD', 'ETH-USD', 'ADA-USD', 'LINK-USD', 'KNC-USD', 'DASH-USD']:
+    action = getAction(client, exchange, n, NUMPOINTS, True)
+    print (exchange,"->",action)
+
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-NUMPOINTS = 40
-n = trainPerceptron(NUMPOINTS)
-
-from cbpro_client import get_client
-
-client = get_client()
-
-def column(matrix, i):
-  return [row[i] for row in matrix]
-
-rates = client.get_product_historic_rates('ETH-USD', granularity=3600)
-rates = rates[::-1] # reverse order so it goes in chronological order
-
-import matplotlib as mpl
-mpl.use('agg')
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdate
-x = mdate.epoch2num(column(rates,0)[-NUMPOINTS:])
-y = column(rates,3)[-NUMPOINTS:]
-
-action = buysell(y, 0.06)
-logging.info("x (",len(x),"):", x)
-logging.info("y (",len(y),"):", y)
-logging.info("action: ", action)
-fig, ax = plt.subplots()
-ax.plot_date(x,y)
-# Choose your xtick format string
-date_fmt = '%y-%m-%d %H:%M:%S'
-
-# Use a DateFormatter to set the data to the correct format.
-date_formatter = mdate.DateFormatter(date_fmt)
-ax.xaxis.set_major_formatter(date_formatter)
-
-# Sets the tick labels diagonal so they fit easier.
-fig.autofmt_xdate()
-plt.savefig('tmp.png')
+mainFunc()
