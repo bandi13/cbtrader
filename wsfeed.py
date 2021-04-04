@@ -1,7 +1,7 @@
-import cbpro, time
 import numpy as np
 from perceptron import NN
 import logging
+from cbpro_client import get_client
 
 def trainPerceptron(NUMPOINTS=21):
   inputs = []
@@ -106,8 +106,8 @@ def buysell(nn, data, sensitivity):
 def column(matrix, i):
   return [row[i] for row in matrix]
 
-def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
-  rates = client.get_product_historic_rates(exchange, granularity=3600)
+def getAction(exchange, nn, NUMPOINTS, savePlot=False):
+  rates = get_client().get_product_historic_rates(exchange, granularity=3600)
   rates = rates[::-1] # reverse order so it goes in chronological order
 
   y = column(rates,3)[-NUMPOINTS:]
@@ -138,7 +138,7 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
 
   return action
 
-def mainFunc():
+def mainFunc(base, exchanges):
   logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
@@ -160,23 +160,35 @@ def mainFunc():
 
   #n.printNN()
 
-  logging.info("Connecting to Coinbase...")
-  from cbpro_client import get_client
-  client = get_client()
-
   logging.info("Calculating actions...")
-  for exchange in ['BTC-USD', 'ETH-USD', 'ADA-USD', 'LINK-USD', 'KNC-USD', 'DASH-USD']:
-    action = getAction(client, exchange, n, n.getNumPoints(), True)
+  for exchange in exchanges:
+    action = getAction(exchange+'-'+base, n, n.getNumPoints(), True)
     print (exchange,"->",action)
 
-  accounts = client.get_accounts()
+def getBaseFunds(base):
+  accounts = get_client().get_accounts()
   for acct in accounts:
-    if float(acct['available']) != 0:
+    if acct['currency'] == base:
+      return acct['available']
+  return -1
+
+def secondFunc(base, exchanges):
+  accounts = get_client().get_accounts()
+  for acct in accounts:
+    if float(acct['available']) != 0 and acct['currency'] in exchanges:
       print (acct['currency']+": "+acct['available'])
+      print (acct)
+
+      fills = get_client().get_fills(product_id=acct['currency']+'-'+base)
+      for fill in fills:
+        #if fill['side'] == 'buy':
+        print (fill)
 
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-mainFunc()
+exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'KNC', 'DASH', 'SUSHI']
+mainFunc('USD', exchanges)
+secondFunc('USD', exchanges)
