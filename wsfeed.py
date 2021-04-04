@@ -46,10 +46,8 @@ def trainPerceptron(NUMPOINTS=21):
   inputs =np.array(inputs)
   outputs=np.array(outputs)
 
-  n=NN(inputs)
-  # print(n.predict(inputs).T) # Before training
   sensitivity = 0.02
-  n.train(inputs, outputs, sensitivity=sensitivity)
+  n=NN(inputs, outputs, sensitivity=sensitivity)
   predictions = n.predict(inputs)
   logging.info("Predicted:",predictions.T)
   logging.info("Expected: ",outputs.T)

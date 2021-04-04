@@ -10,18 +10,14 @@ def sigmoid_der(x):
 	return x*(1.0 - x)
 
 class NN:
-    def __init__(self, inputs):
-        self.inputs = inputs
-        self.l=len(self.inputs)
-        self.li=len(self.inputs[0])
+    def __init__(self, inputs, outputs, it=1000000, sensitivity=0.001):
+        self.l=len(inputs)
+        self.li=len(inputs[0])
 
         self.wi=np.random.random((self.li, self.l))
         self.wh=np.random.random((self.l, 1))
 
-    def predict(self, inp):
-        s1=sigmoid(np.dot(inp, self.wi))
-        s2=sigmoid(np.dot(s1, self.wh))
-        return s2
+        self.train(inputs, outputs, it, sensitivity)
 
     def train(self, inputs, outputs, it=1000000, sensitivity=0.001):
         for i in range(it):
@@ -41,6 +37,11 @@ class NN:
             if (i > 10) and (np.amax(l2_err) < sensitivity) and (np.amax(l1_err) < sensitivity):
                 logging.info("Early training exit ", np.amax(l2_err), " and ", np.amax(l1_err), " at ", i)
                 break
+
+    def predict(self, inp):
+        s1=sigmoid(np.dot(inp, self.wi))
+        s2=sigmoid(np.dot(s1, self.wh))
+        return s2
 
 #inputs=np.array([[0,0], [0,1], [1,0], [1,1] ])
 #outputs=np.array([ [0], [1],[1],[0] ])
