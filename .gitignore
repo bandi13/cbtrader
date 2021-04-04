@@ -1,4 +1,5 @@
 
-prices.txt
-
+__pycache__/*
+prices-*.png
+.perceptron.obj
 .env

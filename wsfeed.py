@@ -134,7 +134,7 @@ def getAction(client, exchange, nn, NUMPOINTS, savePlot=False):
 
     # Sets the tick labels diagonal so they fit easier.
     fig.autofmt_xdate()
-    fig.savefig(exchange+'.png')
+    fig.savefig('prices-'+exchange+'.png')
 
   return action
 
@@ -145,7 +145,7 @@ def mainFunc():
   except ModuleNotFoundError:
     import pickle
 
-  filename='perceptron.obj'
+  filename='.perceptron.obj'
   import os.path
   if os.path.exists(filename):
     logging.info("Using existing perceptron from "+filename)
