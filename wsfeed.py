@@ -211,8 +211,9 @@ import matplotlib as mpl
 mpl.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdate
-x = mdate.epoch2num(column(rates,0)[0:NUMPOINTS])
-y = column(rates,3)[0:NUMPOINTS]
+x = mdate.epoch2num(column(rates,0)[-NUMPOINTS:])
+y = column(rates,3)[-NUMPOINTS:]
+
 action = buysell(y, 0.06)
 logging.info("x (",len(x),"):", x)
 logging.info("y (",len(y),"):", y)
