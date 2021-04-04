@@ -132,57 +132,6 @@ def buysell(data, sensitivity):
   else:
     return "none"
 
-class myWebsocketClient(cbpro.WebsocketClient):
-  def __init__(self):
-    super(myWebsocketClient,self).__init__()
-    self.data = []
-    self.lastBuyPriceBTC = 0.0
-    self.currentPriceBTCUSD = 0.0
-    self.buyCount = 0
-    self.fee = 20 # in USD
-  def on_open(self):
-      self.url = "wss://ws-feed.pro.coinbase.com/"
-      self.products = ["BTC-USD"]
-      self.channels = ["ticker"]
-      self.message_count = 0
-      print("Lets count the messages!")
-  def on_message(self, msg):
-      global currentUSD
-      global currentBTC
-      self.message_count += 1
-      if 'type' in msg:
-        if msg["type"] == "error":
-          print ("Error: ", msg)
-        elif msg["type"] == "ticker":
-          self.currentPriceBTCUSD = float(msg["price"])
-          with open('prices.txt','a') as f:
-            print (msg["product_id"], " ", msg["side"], "\t@ {:.3f}".format(self.currentPriceBTCUSD), file=f)
-          self.data.append(self.currentPriceBTCUSD)
-          if len(self.data) > NUMPOINTS:
-            self.data = self.data[-NUMPOINTS:] # last NUMPOINTS elements
-            action = buysell(self.data, 0.1)
-            if action == "buy":
-              if (currentUSD != 0) and ((self.lastBuyPriceBTC == 0) or (self.currentPriceBTCUSD - self.fee < self.lastBuyPriceBTC + self.fee)):
-                self.buyCount = self.buyCount + 1
-                if self.buyCount > NUMPOINTS / 10:
-                  currentBTC = currentUSD / (self.currentPriceBTCUSD + self.fee)
-                  currentUSD = 0.0
-                  self.lastBuyPriceBTC = self.currentPriceBTCUSD
-                  print("bought ", currentBTC, "BTC for ", self.currentPriceBTCUSD + self.fee)
-            elif action == "sell":
-              self.buyCount = 0
-              if (currentBTC != 0) and (self.currentPriceBTCUSD - self.fee > self.lastBuyPriceBTC + self.fee):
-                currentUSD = round(currentBTC * (self.currentPriceBTCUSD - self.fee),2)
-                currentBTC = 0.0
-                print("sold for $", currentUSD, " at ", self.currentPriceBTCUSD - self.fee)
-            else:
-              self.buyCount = 0
-        else:
-          print ("Unknown type: ", msg["type"])
-  def on_close(self):
-      print("-- Goodbye! --")
-
-
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
@@ -190,12 +139,6 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 
 NUMPOINTS = 40
 n = trainPerceptron(NUMPOINTS)
-
-#currentUSD = 100.0
-#currentBTC = 0.0
-
-#rates = cbpro_client.get_product_historic_rates('BTC-USD')
-#print ("Rates=",rates)
 
 from cbpro_client import get_client
 
@@ -230,13 +173,3 @@ ax.xaxis.set_major_formatter(date_formatter)
 # Sets the tick labels diagonal so they fit easier.
 fig.autofmt_xdate()
 plt.savefig('tmp.png')
-
-
-#wsClient = myWebsocketClient()
-#wsClient.start()
-#print(wsClient.url, wsClient.products)
-#while (1):
-#  print ("message_count =", "{}".format(wsClient.message_count),". Assets: $", "{:.2f}".format(currentUSD + wsClient.currentPriceBTCUSD * currentBTC))
-#  time.sleep(10)
-#wsClient.close()
-
