@@ -172,23 +172,32 @@ def getBaseFunds(base):
       return acct['available']
   return -1
 
+def getDCAPrice(base,currency,available):
+  fills = get_client().get_fills(product_id=currency+'-'+base)
+  cost = 0
+  totalSize = 0
+  for fill in fills:
+    if fill['side'] == "buy":
+      cost = cost + float(fill['price']) * float(fill['size']) + float(fill['fee'])
+      totalSize = totalSize + float(fill['size'])
+    if totalSize >= available:
+      break
+
+  return cost / available
+
 def secondFunc(base, exchanges):
   accounts = get_client().get_accounts()
   for acct in accounts:
     if float(acct['available']) != 0 and acct['currency'] in exchanges:
-      print (acct['currency']+": "+acct['available'])
-      print (acct)
-
-      fills = get_client().get_fills(product_id=acct['currency']+'-'+base)
-      for fill in fills:
-        #if fill['side'] == 'buy':
-        print (fill)
+      print (acct['currency']+": "+acct['available']+" @ "+str(getDCAPrice(base,acct['currency'],float(acct['available']))))
 
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
+base = 'USD'
 exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'KNC', 'DASH', 'SUSHI']
-mainFunc('USD', exchanges)
-secondFunc('USD', exchanges)
+mainFunc(base, exchanges)
+print ("Funds available: "+getBaseFunds(base))
+secondFunc(base, exchanges)
