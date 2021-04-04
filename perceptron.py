@@ -35,12 +35,12 @@ class NN:
             self.wi+=np.dot(l0.T, l1_delta)
 
             if (i > 10) and (np.amax(l2_err) < sensitivity) and (np.amax(l1_err) < sensitivity):
-                logging.info("Early training exit ", np.amax(l2_err), " and ", np.amax(l1_err), " at ", i)
+                logging.info("Early training exit "+str(np.amax(l2_err))+" and "+str(np.amax(l1_err))+" at "+str(i))
                 break
 
     def getNumPoints(self):
         return self.li
-        
+
     def predict(self, inp):
         s1=sigmoid(np.dot(inp, self.wi))
         s2=sigmoid(np.dot(s1, self.wh))

@@ -12,7 +12,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(float(i) / (NUMPOINTS - 1))
   val = 1
 
-  logging.debug("f(x)=x : ",tmparr, "->", val)
+  logging.debug("f(x)=x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -21,7 +21,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(0.5 + np.sin(2 * np.pi * float(i) / (NUMPOINTS - 1)) / 2)
   val = 0.5
 
-  logging.debug("f(x)=sin(2*pi*x) :", tmparr, "->", val)
+  logging.debug("f(x)=sin(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -30,7 +30,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(0.5 + np.cos(2 * np.pi * float(i) / (NUMPOINTS - 1)) / 2)
   val = 0.5
 
-  logging.debug("f(x)=cos(2*pi*x) :", tmparr, "->", val)
+  logging.debug("f(x)=cos(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -39,7 +39,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(1.0 - float(i) / (NUMPOINTS - 1))
   val = 0
 
-  logging.debug("f(x)=1-x : ", tmparr, "->", val)
+  logging.debug("f(x)=1-x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
 
@@ -53,7 +53,7 @@ def trainPerceptron(NUMPOINTS=21):
   logging.info("Expected: "+str(outputs.T))
   for i in range(len(outputs.T)):
     if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity + 0.01:
-      logging.warning("Training failure: i=",i)
+      logging.warning("Training failure: i="+str(i))
       return None
 
   tmparr = []
@@ -61,7 +61,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append((float(i) / (NUMPOINTS - 1)) / 2)
   predictions = n.predict(np.array(tmparr))
   if abs(predictions.T[0] - 1) > 0.25:
-    logging.debug("f(x)=x/2 : ", tmparr, "->", predictions)
+    logging.debug("f(x)=x/2 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=x/2")
     return None
 
@@ -72,7 +72,7 @@ def trainPerceptron(NUMPOINTS=21):
   tmparr[NUMPOINTS - 1] = 0.75
   predictions = n.predict(np.array(tmparr))
   if abs(predictions.T[0] - 1) > 0.25:
-    logging.debug("f(x)=(x=n-1)?1:0 : ", tmparr, "->", predictions)
+    logging.debug("f(x)=(x=n-1)?1:0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=(x=n-1)?1:0")
     return None
 
@@ -81,7 +81,7 @@ def trainPerceptron(NUMPOINTS=21):
       tmparr.append(0)
   predictions = n.predict(np.array(tmparr))
   if abs(predictions.T[0] - 0.5) > 0.25:
-    logging.debug("f(x)=0 : ", tmparr, "->", predictions)
+    logging.debug("f(x)=0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=0")
     return None
 
@@ -95,7 +95,7 @@ def buysell(nn, data, sensitivity):
 #  print("min: ",minData, " max:", maxData)
   data = (np.array(data) - minData) / (maxData - minData)
   predict = nn.predict(data)
-  logging.debug("Stocks : ", data, "->", predict)
+  logging.debug("Stocks : "+str(data)+"->"+str(predict))
   if predict > 1.0 - sensitivity:
     return "sell"
   elif predict < sensitivity:
