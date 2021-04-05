@@ -184,7 +184,7 @@ def getInvestmentValue(exchanges):
       total = total + float(acct['available'])*dcaPrice
   return total
 
-def mainFunc(base, exchanges):
+def mainFunc(base, exchanges, allowTrades=False):
   logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
@@ -221,14 +221,16 @@ def mainFunc(base, exchanges):
         if amount < 10: # Minimum amount
           amount = 10
         print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
-        print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
+        if allowTrades == True:
+          print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
     elif action == 'sell':
       available = getAvailable(exchange)
       if available != 0: # Has money in it
         curPrice = getCurPrice(product_id)
         if curPrice > getDCAPrice(base,exchange,available)*1.05: # Worthwhile selling (with fees)
           print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice + 0.05))
-          print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
+          if allowTrades == True:
+            print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
 
 
 def printPortfolio(base, exchanges):
@@ -241,6 +243,7 @@ def printPortfolio(base, exchanges):
       dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
       value = float(acct['available'])*dcaPrice
       print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(value)+" ("+str(100 * value / portfolioValue)+"%)")
+  print ("Total portfolio: "+str(portfolioValue)+base)
 
 logging.basicConfig(level=logging.WARNING)
 
