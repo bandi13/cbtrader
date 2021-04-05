@@ -87,10 +87,10 @@ def trainPerceptron(NUMPOINTS=21):
 
   return n
 
-def buysell(nn, data, sensitivity):
+def buysell(nn, data, sensitivity, marketVolatility=0.1):
   minData = min(data)
   maxData = max(data)
-  if maxData == minData:
+  if (maxData - minData) / minData < marketVolatility: # No significant market change
     return "none"
 #  print("min: ",minData, " max:", maxData)
   data = (np.array(data) - minData) / (maxData - minData)
@@ -212,20 +212,29 @@ def mainFunc(base, exchanges):
     action = getAction(product_id, n, n.getNumPoints(), True)
     print (product_id,"->",action)
     if action == 'buy':
+      baseFunds = getBaseFunds(base)
+      if baseFunds < 10: # Not enough to invest
+        continue
       available = getAvailable(exchange)
       if (available * getDCAPrice(base,exchange, available)) / (getInvestmentValue(exchanges) + getBaseFunds(base)) < 0.5: # Only if our portfolio has less than 50% of product_id
-        amount = 0.05 * getBaseFunds(base)
+        amount = round(0.05 * baseFunds,2)
+        if amount < 10: # Minimum amount
+          amount = 10
         print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
+        print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
     elif action == 'sell':
       available = getAvailable(exchange)
       if available != 0: # Has money in it
         curPrice = getCurPrice(product_id)
         if curPrice > getDCAPrice(base,exchange,available): # Worthwhile selling
           print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice + 0.05))
+          print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
 
 
-def secondFunc(base, exchanges):
-  portfolioValue = getInvestmentValue(exchanges) + getBaseFunds(base)
+def printPortfolio(base, exchanges):
+  baseFunds = getBaseFunds(base)
+  print ("Funds available: "+str(baseFunds))
+  portfolioValue = getInvestmentValue(exchanges) + baseFunds
   accounts = get_client().get_accounts()
   for acct in accounts:
     if float(acct['available']) != 0 and acct['currency'] in exchanges:
@@ -241,5 +250,4 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 base = 'USD'
 exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'KNC', 'DASH', 'SUSHI']
 mainFunc(base, exchanges)
-print ("Funds available: "+str(getBaseFunds(base)))
-secondFunc(base, exchanges)
+printPortfolio(base, exchanges)
