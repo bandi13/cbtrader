@@ -15,6 +15,7 @@ def trainPerceptron(NUMPOINTS=21):
   logging.debug("f(x)=x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
+  savePlot(range(NUMPOINTS),tmparr,'fx_x.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -24,6 +25,7 @@ def trainPerceptron(NUMPOINTS=21):
   logging.debug("f(x)=sin(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
+  savePlot(range(NUMPOINTS),tmparr,'fx_sin2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -33,6 +35,7 @@ def trainPerceptron(NUMPOINTS=21):
   logging.debug("f(x)=cos(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
+  savePlot(range(NUMPOINTS),tmparr,'fx_cos2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -42,6 +45,7 @@ def trainPerceptron(NUMPOINTS=21):
   logging.debug("f(x)=1-x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
+  savePlot(range(NUMPOINTS),tmparr,'fx_1-x.png')
 
   inputs =np.array(inputs)
   outputs=np.array(outputs)
@@ -60,6 +64,7 @@ def trainPerceptron(NUMPOINTS=21):
   for i in range(NUMPOINTS):
       tmparr.append((float(i) / (NUMPOINTS - 1)) / 2)
   predictions = n.predict(np.array(tmparr))
+  savePlot(range(NUMPOINTS),tmparr,'fx_x_2.png')
   if abs(predictions.T[0] - 1) > 0.25:
     logging.debug("f(x)=x/2 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=x/2")
@@ -68,6 +73,7 @@ def trainPerceptron(NUMPOINTS=21):
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(0)
+  tmparr[NUMPOINTS - 3] = 0.75
   tmparr[NUMPOINTS - 2] = 1
   tmparr[NUMPOINTS - 1] = 0.75
   predictions = n.predict(np.array(tmparr))
@@ -75,6 +81,7 @@ def trainPerceptron(NUMPOINTS=21):
     logging.debug("f(x)=(x=n-1)?1:0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=(x=n-1)?1:0")
     return None
+  savePlot(range(NUMPOINTS),tmparr,'fx_x-1.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -84,6 +91,7 @@ def trainPerceptron(NUMPOINTS=21):
     logging.debug("f(x)=0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=0")
     return None
+  savePlot(range(NUMPOINTS),tmparr,'fx_0.png')
 
   return n
 
@@ -106,24 +114,14 @@ def buysell(nn, data, sensitivity, marketVolatility=0.1):
 def column(matrix, i):
   return [row[i] for row in matrix]
 
-def getAction(product_id, nn, NUMPOINTS, savePlot=False):
-  rates = get_client().get_product_historic_rates(product_id, granularity=3600)
-  rates = rates[::-1] # reverse order so it goes in chronological order
-
-  y = column(rates,3)[-NUMPOINTS:]
-
-  action = buysell(nn, y, 0.06)
-  logging.info("y ("+str(len(y))+"):"+str(y))
-  logging.info("action: " + action)
-
-  if savePlot == True:
-    import matplotlib as mpl
-    mpl.use('agg')
-    import matplotlib.pyplot as plt
-    import matplotlib.dates as mdate
-    x = mdate.epoch2num(column(rates,0)[-NUMPOINTS:])
-    logging.info("x ("+str(len(x))+"):"+str(x))
-    fig, ax = plt.subplots()
+def savePlot(x,y,filename,xAsEpoch=False):
+  import matplotlib as mpl
+  mpl.use('agg')
+  import matplotlib.pyplot as plt
+  import matplotlib.dates as mdate
+  fig, ax = plt.subplots()
+  if xAsEpoch == True:
+    x = mdate.epoch2num(x)
     ax.plot_date(x,y)
     # Choose your xtick format string
     date_fmt = '%y-%m-%d %H:%M:%S'
@@ -134,7 +132,25 @@ def getAction(product_id, nn, NUMPOINTS, savePlot=False):
 
     # Sets the tick labels diagonal so they fit easier.
     fig.autofmt_xdate()
-    fig.savefig('prices-'+product_id+'.png')
+  else:
+    ax.plot(x,y)
+
+  fig.savefig(filename)
+
+def getAction(product_id, nn, NUMPOINTS, doSavePlot=False):
+  rates = get_client().get_product_historic_rates(product_id, granularity=3600)
+  rates = rates[::-1] # reverse order so it goes in chronological order
+
+  y = column(rates,3)[-NUMPOINTS:]
+
+  action = buysell(nn, y, 0.06)
+  logging.info("y ("+str(len(y))+"):"+str(y))
+  logging.info("action: " + action)
+
+  if doSavePlot == True:
+    x = column(rates,0)[-NUMPOINTS:]
+    logging.info("x ("+str(len(x))+"):"+str(x))
+    savePlot(x,y,'prices-'+product_id+'.png',True)
 
   return action
 
@@ -201,6 +217,8 @@ def mainFunc(base, exchanges, allowTrades=False):
     logging.info("Using new perceptron")
     NUMPOINTS = 40
     n = trainPerceptron(NUMPOINTS)
+    if n is None:
+      return
     with open(filename, 'wb') as output:
       pickle.dump(n, output)
 
