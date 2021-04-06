@@ -55,7 +55,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.info("Predicted:"+str(predictions.T))
   logging.info("Expected: "+str(outputs.T))
   for i in range(len(outputs.T)):
-    if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity + 0.01:
+    if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity * 2:
       logging.warning("Training failure: i="+str(i))
       return None
 
