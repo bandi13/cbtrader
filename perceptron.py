@@ -10,7 +10,7 @@ def sigmoid_der(x):
 	return x*(1.0 - x)
 
 class NN:
-    def __init__(self, inputs, outputs, it=1000000, sensitivity=0.001):
+    def __init__(self, inputs, outputs, it=10000000000, sensitivity=0.001):
         self.l=len(inputs)
         self.li=len(inputs[0])
 
@@ -19,7 +19,7 @@ class NN:
 
         self.train(inputs, outputs, it, sensitivity)
 
-    def train(self, inputs, outputs, it=1000000, sensitivity=0.001):
+    def train(self, inputs, outputs, it, sensitivity):
         for i in range(it):
             l0=inputs
             l1=sigmoid(np.dot(l0, self.wi))

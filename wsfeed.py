@@ -3,7 +3,7 @@ from perceptron import NN
 import logging
 from cbpro_client import get_client
 
-def trainPerceptron(NUMPOINTS=21):
+def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   inputs = []
   outputs= []
 
@@ -50,7 +50,6 @@ def trainPerceptron(NUMPOINTS=21):
   inputs =np.array(inputs)
   outputs=np.array(outputs)
 
-  sensitivity = 0.02
   n=NN(inputs, outputs, sensitivity=sensitivity)
   predictions = n.predict(inputs)
   logging.info("Predicted:"+str(predictions.T))
@@ -216,7 +215,7 @@ def mainFunc(base, exchanges, allowTrades=False):
   else:
     logging.info("Using new perceptron")
     NUMPOINTS = 40
-    n = trainPerceptron(NUMPOINTS)
+    n = trainPerceptron(NUMPOINTS,0.01)
     if n is None:
       return
     with open(filename, 'wb') as output:
