@@ -15,7 +15,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  savePlot(range(NUMPOINTS),tmparr,'fx_x.png')
+  #savePlot(range(NUMPOINTS),tmparr,'fx_x.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -25,7 +25,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=sin(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  savePlot(range(NUMPOINTS),tmparr,'fx_sin2pix.png')
+  #savePlot(range(NUMPOINTS),tmparr,'fx_sin2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -35,7 +35,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=cos(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  savePlot(range(NUMPOINTS),tmparr,'fx_cos2pix.png')
+  #savePlot(range(NUMPOINTS),tmparr,'fx_cos2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -45,7 +45,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=1-x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  savePlot(range(NUMPOINTS),tmparr,'fx_1-x.png')
+  #savePlot(range(NUMPOINTS),tmparr,'fx_1-x.png')
 
   inputs =np.array(inputs)
   outputs=np.array(outputs)
@@ -63,7 +63,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   for i in range(NUMPOINTS):
       tmparr.append((float(i) / (NUMPOINTS - 1)) / 2)
   predictions = n.predict(np.array(tmparr))
-  savePlot(range(NUMPOINTS),tmparr,'fx_x_2.png')
+  #savePlot(range(NUMPOINTS),tmparr,'fx_x_2.png')
   if abs(predictions.T[0] - 1) > 0.25:
     logging.debug("f(x)=x/2 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=x/2")
@@ -76,21 +76,21 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   tmparr[NUMPOINTS - 2] = 1
   tmparr[NUMPOINTS - 1] = 0.75
   predictions = n.predict(np.array(tmparr))
+  #savePlot(range(NUMPOINTS),tmparr,'fx_x-1.png')
   if abs(predictions.T[0] - 1) > 0.25:
     logging.debug("f(x)=(x=n-1)?1:0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=(x=n-1)?1:0")
     return None
-  savePlot(range(NUMPOINTS),tmparr,'fx_x-1.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
       tmparr.append(0)
   predictions = n.predict(np.array(tmparr))
+  #savePlot(range(NUMPOINTS),tmparr,'fx_0.png')
   if abs(predictions.T[0] - 0.5) > 0.25:
     logging.debug("f(x)=0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=0")
     return None
-  savePlot(range(NUMPOINTS),tmparr,'fx_0.png')
 
   return n
 
