@@ -216,7 +216,8 @@ def mainFunc(base, exchanges, allowTrades=False):
       if baseFunds < 10: # Not enough to invest
         continue
       available = getAvailable(exchange)
-      if (available * getDCAPrice(base,exchange, available)) / (getInvestmentValue(exchanges) + getBaseFunds(base)) < 0.5: # Only if our portfolio has less than 50% of product_id
+      portfolioValue = getInvestmentValue(exchanges) + baseFunds
+      if 100 * (available * getDCAPrice(base, exchange, available)) / portfolioValue < 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
         amount = round(0.05 * baseFunds,2)
         if amount < 10: # Minimum amount
           amount = 10
