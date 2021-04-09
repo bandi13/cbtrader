@@ -149,7 +149,7 @@ def getAction(product_id, nn, NUMPOINTS, doSavePlot=False):
   if doSavePlot == True:
     x = column(rates,0)[-NUMPOINTS:]
     logging.info("x ("+str(len(x))+"):"+str(x))
-    savePlot(x,y,'prices-'+product_id+'.png',True)
+    savePlot(x,y,'prices-'+product_id+'.png',False)
 
   return action
 
