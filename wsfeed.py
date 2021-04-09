@@ -246,7 +246,7 @@ def mainFunc(base, exchanges, allowTrades=False):
       if available != 0: # Has money in it
         curPrice = getCurPrice(product_id)
         if curPrice > getDCAPrice(base,exchange,available)*1.05: # Worthwhile selling (with fees)
-          print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice + 0.05))
+          print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice))
           if allowTrades == True:
             print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
 
