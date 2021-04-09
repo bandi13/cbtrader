@@ -181,7 +181,7 @@ def getDCAPrice(base,currency,available):
   return cost / available
 
 def getCurPrice(product_id):
-  return get_client().get_product_ticker(product_id=product_id)['price']
+  return float(get_client().get_product_ticker(product_id=product_id)['bid'])
 
 def getAvailable(currency):
   accounts = get_client().get_accounts()
