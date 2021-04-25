@@ -262,10 +262,13 @@ def mainFunc(base, exchanges, allowTrades=False):
       dcaPrice = getDCAPrice(base, exchange, available)
       if 100 * (available * dcaPrice) / portfolioValue > 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
         continue
+      curPrice = getCurPrice(product_id)
+      if dcaPrice != 0 and curPrice > dcaPrice: # Only buy if cheaper than before
+        continue
       amount = round(0.01 * baseFunds,2)
       if amount < 10: # Minimum amount
         amount = 10
-      print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
+      print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(curPrice))
       if allowTrades == True:
         print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
     elif action == 'sell':
