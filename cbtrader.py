@@ -259,13 +259,15 @@ def mainFunc(base, exchanges, allowTrades=False):
       if baseFunds < 10: # Not enough to invest
         continue
       available = getAvailable(exchange)
-      if 100 * (available * getDCAPrice(base, exchange, available)) / portfolioValue < 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
-        amount = round(0.01 * baseFunds,2)
-        if amount < 10: # Minimum amount
-          amount = 10
-        print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
-        if allowTrades == True:
-          print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
+      dcaPrice = getDCAPrice(base, exchange, available)
+      if 100 * (available * dcaPrice) / portfolioValue > 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
+        continue
+      amount = round(0.01 * baseFunds,2)
+      if amount < 10: # Minimum amount
+        amount = 10
+      print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
+      if allowTrades == True:
+        print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
     elif action == 'sell':
       available = getAvailable(exchange)
       if available != 0: # Has money in it
