@@ -240,7 +240,7 @@ def mainFunc(base, exchanges, allowTrades=False):
       available = getAvailable(exchange)
       portfolioValue = getInvestmentValue(exchanges) + baseFunds
       if 100 * (available * getDCAPrice(base, exchange, available)) / portfolioValue < 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
-        amount = round(0.05 * baseFunds,2)
+        amount = round(0.01 * baseFunds,2)
         if amount < 10: # Minimum amount
           amount = 10
         print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(getCurPrice(product_id)))
