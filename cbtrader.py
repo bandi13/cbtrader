@@ -171,14 +171,19 @@ def getDCAPrice(base,currency,available):
     if totalSize >= available:
       break
     if fill['side'] == "buy":
-      cost = cost + float(fill['price']) * float(fill['size']) + float(fill['fee'])
-      totalSize = totalSize + float(fill['size'])
+      logging.debug("bought " + currency + ": " + fill['size'] + " @ " + fill['price'] + " + " + fill['fee'])
+      curSize = float(fill['size'])
+      if curSize > available - totalSize:
+        curSize = available - totalSize
+      cost = cost + float(fill['price']) * curSize + float(fill['fee'])
+      totalSize = totalSize + curSize
 
   if totalSize < available:
     logging.warning("Unreliable price for "+currency+". Using $0.")
     return 0
 
-  return cost / available
+  logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(totalSize) + ". Available=" + str(available) + ". DCAPrice=" + str(cost / totalSize))
+  return cost / totalSize
 
 def getCurPrice(product_id):
   return float(get_client().get_product_ticker(product_id=product_id)['bid'])
