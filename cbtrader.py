@@ -3,6 +3,16 @@ from perceptron import NN
 import logging
 from cbpro_client import get_client
 
+class Memoize:
+  def __init__(self, fn):
+    self.fn = fn
+    self.memo = {}
+
+  def __call__(self, *args):
+    if args not in self.memo:
+      self.memo[args] = self.fn(*args)
+    return self.memo[args]
+
 def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   inputs = []
   outputs= []
@@ -160,6 +170,7 @@ def getBaseFunds(base):
       return float(acct['available'])
   return -1
 
+@Memoize
 def getDCAPrice(base,currency,available):
   if available == 0:
     return 0
