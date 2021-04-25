@@ -229,6 +229,7 @@ def mainFunc(base, exchanges, allowTrades=False):
   #n.printNN()
 
   logging.info("Calculating actions...")
+  portfolioValue = getInvestmentValue(exchanges) + getBaseFunds(base)
   for exchange in exchanges:
     product_id = exchange+'-'+base
     action = getAction(product_id, n, n.getNumPoints(), True)
@@ -238,7 +239,6 @@ def mainFunc(base, exchanges, allowTrades=False):
       if baseFunds < 10: # Not enough to invest
         continue
       available = getAvailable(exchange)
-      portfolioValue = getInvestmentValue(exchanges) + baseFunds
       if 100 * (available * getDCAPrice(base, exchange, available)) / portfolioValue < 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
         amount = round(0.01 * baseFunds,2)
         if amount < 10: # Minimum amount
