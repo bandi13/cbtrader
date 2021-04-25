@@ -184,6 +184,9 @@ def getDCAPrice(base,currency,available):
   cost = 0
   totalSize = 0
   for fill in fills:
+    if 'message' in fill:
+      logging.error("Can not get_fills("+currency+'-'+base+')')
+      break
     if totalSize >= available:
       break
     if fill['side'] == "buy":
