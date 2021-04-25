@@ -279,9 +279,10 @@ def printPortfolio(base, exchanges):
   portfolioValue = getInvestmentValue(exchanges) + baseFunds
   accounts = get_client().get_accounts()
   for acct in accounts:
-    if float(acct['available']) != 0 and acct['currency'] in exchanges:
-      dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
-      value = float(acct['available'])*dcaPrice
+    available = float(acct['available'])
+    if available != 0 and acct['currency'] in exchanges:
+      dcaPrice = getDCAPrice(base,acct['currency'],available)
+      value = available*dcaPrice
       print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(roundFiatCurrency(base,value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
   print ("Total portfolio: "+str(roundFiatCurrency(base,portfolioValue))+base)
 
