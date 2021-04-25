@@ -170,6 +170,11 @@ def getBaseFunds(base):
       return float(acct['available'])
   return -1
 
+def roundFiatCurrency(base, value):
+  if base == "USD" or base == "EUR":
+    return round(value,2)
+  return value
+
 @Memoize
 def getDCAPrice(base,currency,available):
   if available == 0:
@@ -193,8 +198,9 @@ def getDCAPrice(base,currency,available):
     logging.warning("Unreliable price for "+currency+". Using $0.")
     return 0
 
-  logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(totalSize) + ". Available=" + str(available) + ". DCAPrice=" + str(cost / totalSize))
-  return cost / totalSize
+  dcaPrice = roundFiatCurrency(base, cost / totalSize)
+  logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(totalSize) + ". Available=" + str(available) + ". DCAPrice=" + str(dcaPrice))
+  return dcaPrice
 
 def getCurPrice(product_id):
   return float(get_client().get_product_ticker(product_id=product_id)['bid'])
@@ -267,18 +273,17 @@ def mainFunc(base, exchanges, allowTrades=False):
           if allowTrades == True:
             print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
 
-
 def printPortfolio(base, exchanges):
   baseFunds = getBaseFunds(base)
-  print ("Funds available: "+str(baseFunds))
+  print ("Funds available: "+str(roundFiatCurrency(base,baseFunds))+base)
   portfolioValue = getInvestmentValue(exchanges) + baseFunds
   accounts = get_client().get_accounts()
   for acct in accounts:
     if float(acct['available']) != 0 and acct['currency'] in exchanges:
       dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
       value = float(acct['available'])*dcaPrice
-      print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(value)+" ("+str(100 * value / portfolioValue)+"%)")
-  print ("Total portfolio: "+str(portfolioValue)+base)
+      print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(roundFiatCurrency(base,value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
+  print ("Total portfolio: "+str(roundFiatCurrency(base,portfolioValue))+base)
 
 logging.basicConfig(level=logging.WARNING)
 
