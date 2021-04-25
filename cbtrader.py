@@ -277,6 +277,7 @@ def printPortfolio(base, exchanges):
   baseFunds = getBaseFunds(base)
   print ("Funds available: "+str(roundFiatCurrency(base,baseFunds))+base)
   portfolioValue = getInvestmentValue(exchanges) + baseFunds
+  print ("Starting portfolio: "+str(roundFiatCurrency(base,portfolioValue))+base)
   accounts = get_client().get_accounts()
   for acct in accounts:
     available = float(acct['available'])
@@ -284,7 +285,6 @@ def printPortfolio(base, exchanges):
       dcaPrice = getDCAPrice(base,acct['currency'],available)
       value = available*dcaPrice
       print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(roundFiatCurrency(base,value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
-  print ("Total portfolio: "+str(roundFiatCurrency(base,portfolioValue))+base)
 
 logging.basicConfig(level=logging.WARNING)
 
