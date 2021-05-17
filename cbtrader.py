@@ -300,6 +300,6 @@ float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
 base = 'USD'
-exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'KNC', 'DASH', 'SUSHI', 'OMG', 'UNI']
+exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'DASH', 'SUSHI', 'OMG', 'UNI', 'AAVE']
 mainFunc(base, exchanges,True)
 printPortfolio(base, exchanges)
