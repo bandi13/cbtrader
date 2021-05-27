@@ -1,17 +1,8 @@
 import numpy as np
 from perceptron import NN
 import logging
-from cbpro_client import get_client
-
-class Memoize:
-  def __init__(self, fn):
-    self.fn = fn
-    self.memo = {}
-
-  def __call__(self, *args):
-    if args not in self.memo:
-      self.memo[args] = self.fn(*args)
-    return self.memo[args]
+import cbpro
+from cbpro_account import cbpro_account
 
 def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   inputs = []
@@ -146,8 +137,8 @@ def savePlot(x,y,filename,xAsEpoch=False):
 
   fig.savefig(filename)
 
-def getAction(product_id, nn, NUMPOINTS, doSavePlot=False):
-  rates = get_client().get_product_historic_rates(product_id, granularity=3600)
+def getAction(cbpro_public_client,product_id, nn, NUMPOINTS, doSavePlot=False):
+  rates = cbpro_public_client.get_product_historic_rates(product_id, granularity=3600)
   rates = rates[::-1] # reverse order so it goes in chronological order
 
   y = column(rates,3)[-NUMPOINTS:]
@@ -163,68 +154,7 @@ def getAction(product_id, nn, NUMPOINTS, doSavePlot=False):
 
   return action
 
-def getBaseFunds(base):
-  accounts = get_client().get_accounts()
-  for acct in accounts:
-    if acct['currency'] == base:
-      return float(acct['available'])
-  return -1
-
-def roundFiatCurrency(base, value):
-  if base == "USD" or base == "EUR":
-    return round(value,2)
-  return value
-
-@Memoize
-def getDCAPrice(base,currency,available):
-  if available == 0:
-    return 0
-
-  fills = get_client().get_fills(product_id=currency+'-'+base)
-  cost = 0
-  totalSize = 0
-  for fill in fills:
-    if 'message' in fill:
-      logging.error("Can not get_fills("+currency+'-'+base+')')
-      break
-    if totalSize >= available:
-      break
-    if fill['side'] == "buy":
-      logging.debug("bought " + currency + ": " + fill['size'] + " @ " + fill['price'] + " + " + fill['fee'])
-      curSize = float(fill['size'])
-      if curSize > available - totalSize:
-        curSize = available - totalSize
-      cost = cost + float(fill['price']) * curSize + float(fill['fee'])
-      totalSize = totalSize + curSize
-
-  if totalSize < available:
-    logging.warning("Unreliable price for "+currency+". Using $0.")
-    return 0
-
-  dcaPrice = roundFiatCurrency(base, cost / totalSize)
-  logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(totalSize) + ". Available=" + str(available) + ". DCAPrice=" + str(dcaPrice))
-  return dcaPrice
-
-def getCurPrice(product_id):
-  return float(get_client().get_product_ticker(product_id=product_id)['bid'])
-
-def getAvailable(currency):
-  accounts = get_client().get_accounts()
-  for acct in accounts:
-    if acct['currency'] == currency: # Found it
-      return float(acct['available'])
-  return 0
-
-def getInvestmentValue(exchanges):
-  accounts = get_client().get_accounts()
-  total = 0
-  for acct in accounts:
-    if float(acct['available']) != 0 and acct['currency'] in exchanges:
-      dcaPrice = getDCAPrice(base,acct['currency'],float(acct['available']))
-      total = total + float(acct['available'])*dcaPrice
-  return total
-
-def mainFunc(base, exchanges, allowTrades=False):
+def mainFunc(clients):
   logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
@@ -248,58 +178,42 @@ def mainFunc(base, exchanges, allowTrades=False):
 
   #n.printNN()
 
-  logging.info("Calculating actions...")
-  portfolioValue = getInvestmentValue(exchanges) + getBaseFunds(base)
-  for exchange in exchanges:
-    product_id = exchange+'-'+base
-    action = getAction(product_id, n, n.getNumPoints(), True)
-    print (product_id,"->",action)
-    if action == 'buy':
-      baseFunds = getBaseFunds(base)
-      if baseFunds < 10: # Not enough to invest
-        continue
-      available = getAvailable(exchange)
-      dcaPrice = getDCAPrice(base, exchange, available)
-      if 100 * (available * dcaPrice) / portfolioValue > 2 * 100 / len(exchanges): # No one product_id may be more than 2x any other product_id
-        continue
-      curPrice = getCurPrice(product_id)
-      if dcaPrice != 0 and curPrice > dcaPrice: # Only buy if cheaper than before
-        continue
-      amount = round(0.01 * baseFunds,2)
-      if amount < 10: # Minimum amount
-        amount = 10
-      print ("Buying "+str(amount)+base+" of "+exchange+" at "+str(curPrice))
-      if allowTrades == True:
-        print (get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
-    elif action == 'sell':
-      available = getAvailable(exchange)
-      if available != 0: # Has money in it
-        curPrice = getCurPrice(product_id)
-        dcaPrice = getDCAPrice(base,exchange,available)
-        if curPrice > dcaPrice*1.1: # Worthwhile selling (with fees)
-          print ("Selling "+str(available)+" of "+exchange+" at "+str(curPrice)+" (dca="+str(dcaPrice)+"). Total: $"+str(curPrice * available))
-          if allowTrades == True:
-            print (get_client().place_market_order(product_id=product_id,side='sell',size=available))
+  cbpro_public_client = cbpro.PublicClient()
 
-def printPortfolio(base, exchanges):
-  baseFunds = getBaseFunds(base)
-  print ("Funds available: "+str(roundFiatCurrency(base,baseFunds))+base)
-  portfolioValue = getInvestmentValue(exchanges) + baseFunds
-  print ("Starting portfolio: "+str(roundFiatCurrency(base,portfolioValue))+base)
-  accounts = get_client().get_accounts()
-  for acct in accounts:
-    available = float(acct['available'])
-    if available != 0 and acct['currency'] in exchanges:
-      dcaPrice = getDCAPrice(base,acct['currency'],available)
-      value = available*dcaPrice
-      print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(roundFiatCurrency(base,value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
+  logging.info("Calculating actions...")
+  product_ids = []
+  for client in clients:
+    product_ids.extend(client.get_product_ids())
+  product_ids = sorted(set(product_ids)) # create unique list
+
+  for product_id in product_ids:
+    action = getAction(cbpro_public_client, product_id, n, n.getNumPoints(), True)
+    print (product_id,"->",action)
+    currencies = product_id.split('-')
+    for client in clients:
+      client.doTransaction(currencies[1],currencies[0],action)
+
+def printPortfolio(cbclients):
+  for cbclient in cbclients:
+    print ("Client: " + cbclient.get_keysfile())
+    baseFunds = cbclient.getBaseFunds()
+    print ("Funds available: "+str(cbclient.roundFiatCurrency(baseFunds))+cbclient.get_base_currency())
+    portfolioValue = cbclient.getInvestmentValue() + baseFunds
+    print ("Starting portfolio: "+str(cbclient.roundFiatCurrency(portfolioValue))+cbclient.get_base_currency())
+    accounts = cbclient.get_client().get_accounts()
+    for acct in accounts:
+      available = float(acct['available'])
+      if available != 0 and cbclient.isInvesting(cbclient.get_base_currency(),acct['currency']):
+        dcaPrice = cbclient.getDCAPrice(acct['currency'],available)
+        value = available*dcaPrice
+        print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(cbclient.roundFiatCurrency(value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
 
 logging.basicConfig(level=logging.WARNING)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-base = 'USD'
-exchanges = ['BTC', 'ETH', 'ADA', 'LINK', 'DASH', 'SUSHI', 'OMG', 'UNI', 'AAVE']
-mainFunc(base, exchanges,True)
-printPortfolio(base, exchanges)
+cbclients = []
+cbclients.append(cbpro_account(".env"))
+mainFunc(cbclients)
+printPortfolio(cbclients)
