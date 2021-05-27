@@ -1,6 +1,7 @@
 import numpy as np
 from perceptron import NN
 import logging
+import os
 import cbpro
 from cbpro_account import cbpro_account
 
@@ -214,6 +215,7 @@ float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
 cbclients = []
-cbclients.append(cbpro_account("client_configs/andras-robotrader"))
+for filename in os.listdir("client_configs"):
+  cbclients.append(cbpro_account("client_configs/"+filename))
 main_func(cbclients)
 print_portfolio(cbclients)
