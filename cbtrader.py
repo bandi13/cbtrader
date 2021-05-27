@@ -214,6 +214,6 @@ float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
 cbclients = []
-cbclients.append(cbpro_account(".env"))
+cbclients.append(cbpro_account("client_configs/andras-robotrader"))
 main_func(cbclients)
 print_portfolio(cbclients)

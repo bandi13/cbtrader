@@ -2,4 +2,4 @@
 __pycache__/*
 prices-*.png
 .perceptron.obj
-.env
+client_configs/*
