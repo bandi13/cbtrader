@@ -3,14 +3,14 @@ import cbpro
 from dotenv import get_key
 
 class cbpro_account:
-  def __init__(self,keysfile,url="https://api.pro.coinbase.com"):
-    self.keysfile = keysfile
-    self.passphrase = get_key(keysfile,'CB_PASSPHRASE')
-    self.secret = get_key(keysfile,'CB_SECRET')
-    self.key = get_key(keysfile, 'CB_KEY')
-    self.base_currency = get_key(keysfile, 'BASE_CURRENCY')
-    self.buying_currency = get_key(keysfile, 'BUYING_CURRENCY').split(',')
-    self.selling_currency = get_key(keysfile, 'SELLING_CURRENCY').split(',')
+  def __init__(self,config_file,url="https://api.pro.coinbase.com"):
+    self.config_file = config_file
+    self.passphrase = get_key(config_file,'CB_PASSPHRASE')
+    self.secret = get_key(config_file,'CB_SECRET')
+    self.key = get_key(config_file, 'CB_KEY')
+    self.base_currency = get_key(config_file, 'BASE_CURRENCY')
+    self.buying_currency = get_key(config_file, 'BUYING_CURRENCY').split(',')
+    self.selling_currency = get_key(config_file, 'SELLING_CURRENCY').split(',')
     self.url = url
     self.client = cbpro.AuthenticatedClient(self.key, self.secret, self.passphrase, api_url=self.url)
     self.account_ids = dict()
@@ -19,8 +19,8 @@ class cbpro_account:
       self.account_ids[acct['currency']] = acct['id']
     self.dca_price_cache = dict()
 
-  def get_keysfile(self):
-    return self.keysfile
+  def get_config_file_name(self):
+    return self.config_file
 
   def get_client(self):
     return self.client
@@ -39,15 +39,16 @@ class cbpro_account:
 
     return sorted(set(ret)) # return unique set
 
-  def getBaseFunds(self):
+  def get_base_funds(self):
     return float(self.get_client().get_account(self.account_ids[self.base_currency])['available'])
 
-  def roundFiatCurrency(self, value):
+  def round_fiat_currency(self, value):
     if self.base_currency == "USD" or self.base_currency == "EUR":
       return round(value,2)
     return value
 
-  def getDCAPrice(self,currency,available):
+  # Note: This is a memoized function
+  def get_dca_price(self,currency,available):
     if available == 0:
       return 0
 
@@ -57,51 +58,51 @@ class cbpro_account:
 
     fills = self.get_client().get_fills(product_id=currency+'-'+self.base_currency)
     cost = 0
-    totalSize = 0
+    total_size = 0
     for fill in fills:
       if 'message' in fill:
         logging.error("Can not get_fills("+currency+'-'+self.base_currency+')')
         break
-      if totalSize >= available:
+      if total_size >= available:
         break
       if fill['side'] == "buy":
         logging.debug("bought " + currency + ": " + fill['size'] + " @ " + fill['price'] + " + " + fill['fee'])
         curSize = float(fill['size'])
-        if curSize > available - totalSize:
-          curSize = available - totalSize
+        if curSize > available - total_size:
+          curSize = available - total_size
         cost = cost + float(fill['price']) * curSize + float(fill['fee'])
-        totalSize = totalSize + curSize
+        total_size = total_size + curSize
 
-    if totalSize < available:
+    if total_size < available:
       logging.warning("Unreliable price for "+currency+". Using $0.")
       self.dca_price_cache[cache_key] = 0
       return 0
 
-    dcaPrice = self.roundFiatCurrency(cost / totalSize)
-    logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(totalSize) + ". Available=" + str(available) + ". DCAPrice=" + str(dcaPrice))
-    self.dca_price_cache[cache_key] = dcaPrice
-    return dcaPrice
+    dca_price = self.round_fiat_currency(cost / total_size)
+    logging.info("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(total_size) + ". Available=" + str(available) + ". DCAPrice=" + str(dca_price))
+    self.dca_price_cache[cache_key] = dca_price
+    return dca_price
 
-  def getCurPrice(self,product_id):
+  def get_current_price(self,product_id):
     return float(self.get_client().get_product_ticker(product_id=product_id)['bid'])
 
-  def getAvailable(self,currency):
+  def get_available(self,currency):
     return float(self.get_client().get_account(self.account_ids[currency])['available'])
 
-  def getInvestmentValue(self):
+  def get_investment_value(self):
     accounts = self.get_client().get_accounts()
     total = 0
     for acct in accounts:
       if float(acct['available']) != 0 and (acct['currency'] in self.buying_currency or acct['currency'] in self.selling_currency):
-        dcaPrice = self.getDCAPrice(acct['currency'],float(acct['available']))
-        total = total + float(acct['available'])*dcaPrice
+        dca_price = self.get_dca_price(acct['currency'],float(acct['available']))
+        total = total + float(acct['available'])*dca_price
     return total
 
-  def isInvesting(self, base, currency):
+  def is_investing(self, base, currency):
     return base == self.base_currency and (currency in self.buying_currency or currency in self.selling_currency)
 
-  def doTransaction(self, base, currency, action, allowTrades=False):
-    if not self.isInvesting(base, currency):
+  def do_transaction(self, base, currency, action, allowTrades=False):
+    if not self.is_investing(base, currency):
       logging.debug ("Not investing")
       return
     product_id = currency+'-'+self.base_currency
@@ -109,39 +110,39 @@ class cbpro_account:
       if currency not in self.buying_currency:
         logging.debug ("Not buying")
         return
-      baseFunds = self.getBaseFunds()
+      baseFunds = self.get_base_funds()
       if baseFunds < 10: # Not enough to invest
         logging.debug ("Too poor")
         return
-      available = self.getAvailable(currency)
-      dcaPrice = self.getDCAPrice(currency, available)
-      portfolioValue = self.getInvestmentValue() + self.getBaseFunds()
-      if 100 * (available * dcaPrice) / portfolioValue > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 2x any other product_id
+      available = self.get_available(currency)
+      dca_price = self.get_dca_price(currency, available)
+      portfolio_value = self.get_investment_value() + self.get_base_funds()
+      if 100 * (available * dca_price) / portfolio_value > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 2x any other product_id
         logging.debug ("Have too many")
         return
-      curPrice = self.getCurPrice(product_id)
-      if dcaPrice != 0 and curPrice > dcaPrice: # Only buy if cheaper than before
+      current_price = self.get_current_price(product_id)
+      if dca_price != 0 and current_price > dca_price: # Only buy if cheaper than before
         logging.debug ("Not good price")
         return
       amount = round(0.01 * baseFunds,2)
       if amount < 10: # Minimum amount
         amount = 10
-      print ("Buying "+str(amount)+self.base_currency+" of "+currency+" at "+str(curPrice))
+      print ("Buying "+str(amount)+self.base_currency+" of "+currency+" at "+str(current_price))
       if allowTrades == True:
         print (self.get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
     elif action == 'sell':
       if currency not in self.selling_currency:
         logging.debug ("Not selling")
         return
-      available = self.getAvailable(currency)
+      available = self.get_available(currency)
       if available == 0: # Has no money in it
         logging.debug ("None available to sell")
         return
-      curPrice = self.getCurPrice(product_id)
-      dcaPrice = self.getDCAPrice(currency,available)
-      if curPrice <= dcaPrice*1.1: # Not Worthwhile selling (with fees)
+      current_price = self.get_current_price(product_id)
+      dca_price = self.get_dca_price(currency,available)
+      if current_price <= dca_price*1.1: # Not Worthwhile selling (with fees)
         logging.debug ("Not Worthwhile")
         return
-      print ("Selling "+str(available)+" of "+currency+" at "+str(curPrice)+" (dca="+str(dcaPrice)+"). Total: $"+str(curPrice * available))
+      print ("Selling "+str(available)+" of "+currency+" at "+str(current_price)+" (dca="+str(dca_price)+"). Total: $"+str(current_price * available))
       if allowTrades == True:
         print (self.get_client().place_market_order(product_id=product_id,side='sell',size=available))

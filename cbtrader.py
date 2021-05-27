@@ -4,7 +4,7 @@ import logging
 import cbpro
 from cbpro_account import cbpro_account
 
-def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
+def train_perceptron(NUMPOINTS=21, sensitivity=0.02):
   inputs = []
   outputs= []
 
@@ -16,7 +16,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  #savePlot(range(NUMPOINTS),tmparr,'fx_x.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_x.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -26,7 +26,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=sin(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  #savePlot(range(NUMPOINTS),tmparr,'fx_sin2pix.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_sin2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -36,7 +36,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=cos(2*pi*x) :"+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  #savePlot(range(NUMPOINTS),tmparr,'fx_cos2pix.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_cos2pix.png')
 
   tmparr = []
   for i in range(NUMPOINTS):
@@ -46,7 +46,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   logging.debug("f(x)=1-x : "+str(tmparr)+"->"+str(val))
   inputs.append(tmparr)
   outputs.append([val])
-  #savePlot(range(NUMPOINTS),tmparr,'fx_1-x.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_1-x.png')
 
   inputs =np.array(inputs)
   outputs=np.array(outputs)
@@ -64,7 +64,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   for i in range(NUMPOINTS):
       tmparr.append((float(i) / (NUMPOINTS - 1)) / 2)
   predictions = n.predict(np.array(tmparr))
-  #savePlot(range(NUMPOINTS),tmparr,'fx_x_2.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_x_2.png')
   if abs(predictions.T[0] - 1) > 0.25:
     logging.debug("f(x)=x/2 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=x/2")
@@ -77,7 +77,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   tmparr[NUMPOINTS - 2] = 1
   tmparr[NUMPOINTS - 1] = 0.75
   predictions = n.predict(np.array(tmparr))
-  #savePlot(range(NUMPOINTS),tmparr,'fx_x-1.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_x-1.png')
   if abs(predictions.T[0] - 1) > 0.25:
     logging.debug("f(x)=(x=n-1)?1:0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=(x=n-1)?1:0")
@@ -87,7 +87,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
   for i in range(NUMPOINTS):
       tmparr.append(0)
   predictions = n.predict(np.array(tmparr))
-  #savePlot(range(NUMPOINTS),tmparr,'fx_0.png')
+  #save_plot(range(NUMPOINTS),tmparr,'fx_0.png')
   if abs(predictions.T[0] - 0.5) > 0.25:
     logging.debug("f(x)=0 : "+str(tmparr)+"->"+str(predictions))
     logging.warning("Training failure: f(x)=0")
@@ -95,7 +95,7 @@ def trainPerceptron(NUMPOINTS=21, sensitivity=0.02):
 
   return n
 
-def buysell(nn, data, sensitivity, marketVolatility=0.1):
+def buy_sell(nn, data, sensitivity, marketVolatility=0.1):
   minData = min(data)
   maxData = max(data)
   if (maxData - minData) / minData < marketVolatility: # No significant market change
@@ -114,7 +114,7 @@ def buysell(nn, data, sensitivity, marketVolatility=0.1):
 def column(matrix, i):
   return [row[i] for row in matrix]
 
-def savePlot(x,y,filename,xAsEpoch=False):
+def save_plot(x,y,filename,xAsEpoch=False):
   import matplotlib as mpl
   mpl.use('agg')
   import matplotlib.pyplot as plt
@@ -137,24 +137,24 @@ def savePlot(x,y,filename,xAsEpoch=False):
 
   fig.savefig(filename)
 
-def getAction(cbpro_public_client,product_id, nn, NUMPOINTS, doSavePlot=False):
+def get_action(cbpro_public_client,product_id, nn, NUMPOINTS, doSavePlot=False):
   rates = cbpro_public_client.get_product_historic_rates(product_id, granularity=3600)
   rates = rates[::-1] # reverse order so it goes in chronological order
 
   y = column(rates,3)[-NUMPOINTS:]
 
-  action = buysell(nn, y, 0.06)
+  action = buy_sell(nn, y, 0.06)
   logging.info("y ("+str(len(y))+"):"+str(y))
   logging.info("action: " + action)
 
   if doSavePlot == True:
     x = column(rates,0)[-NUMPOINTS:]
     logging.info("x ("+str(len(x))+"):"+str(x))
-    savePlot(x,y,'prices-'+product_id+'.png',False)
+    save_plot(x,y,'prices-'+product_id+'.png',False)
 
   return action
 
-def mainFunc(clients):
+def main_func(clients):
   logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
@@ -170,7 +170,7 @@ def mainFunc(clients):
   else:
     logging.info("Using new perceptron")
     NUMPOINTS = 40
-    n = trainPerceptron(NUMPOINTS,0.01)
+    n = train_perceptron(NUMPOINTS,0.01)
     if n is None:
       return
     with open(filename, 'wb') as output:
@@ -187,26 +187,26 @@ def mainFunc(clients):
   product_ids = sorted(set(product_ids)) # create unique list
 
   for product_id in product_ids:
-    action = getAction(cbpro_public_client, product_id, n, n.getNumPoints(), True)
+    action = get_action(cbpro_public_client, product_id, n, n.getNumPoints(), True)
     print (product_id,"->",action)
     currencies = product_id.split('-')
     for client in clients:
-      client.doTransaction(currencies[1],currencies[0],action)
+      client.do_transaction(currencies[1],currencies[0],action)
 
-def printPortfolio(cbclients):
+def print_portfolio(cbclients):
   for cbclient in cbclients:
-    print ("Client: " + cbclient.get_keysfile())
-    baseFunds = cbclient.getBaseFunds()
-    print ("Funds available: "+str(cbclient.roundFiatCurrency(baseFunds))+cbclient.get_base_currency())
-    portfolioValue = cbclient.getInvestmentValue() + baseFunds
-    print ("Starting portfolio: "+str(cbclient.roundFiatCurrency(portfolioValue))+cbclient.get_base_currency())
+    print ("Client: " + cbclient.get_config_file_name())
+    baseFunds = cbclient.get_base_funds()
+    print ("Funds available: "+str(cbclient.round_fiat_currency(baseFunds))+cbclient.get_base_currency())
+    portfolioValue = cbclient.get_investment_value() + baseFunds
+    print ("Starting portfolio: "+str(cbclient.round_fiat_currency(portfolioValue))+cbclient.get_base_currency())
     accounts = cbclient.get_client().get_accounts()
     for acct in accounts:
       available = float(acct['available'])
-      if available != 0 and cbclient.isInvesting(cbclient.get_base_currency(),acct['currency']):
-        dcaPrice = cbclient.getDCAPrice(acct['currency'],available)
+      if available != 0 and cbclient.is_investing(cbclient.get_base_currency(),acct['currency']):
+        dcaPrice = cbclient.get_dca_price(acct['currency'],available)
         value = available*dcaPrice
-        print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(cbclient.roundFiatCurrency(value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
+        print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(cbclient.round_fiat_currency(value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -215,5 +215,5 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 
 cbclients = []
 cbclients.append(cbpro_account(".env"))
-mainFunc(cbclients)
-printPortfolio(cbclients)
+main_func(cbclients)
+print_portfolio(cbclients)
