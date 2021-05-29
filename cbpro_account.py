@@ -129,7 +129,8 @@ class cbpro_account:
         amount = 10
       logging.info (self.config_file+": Buying "+str(amount)+self.base_currency+" of "+currency+" at "+str(current_price))
       if allowTrades == True:
-        print (self.get_client().place_market_order(product_id=product_id,side='buy',funds=amount))
+        order = self.get_client().place_market_order(product_id=product_id,side='buy',funds=amount)
+        logging.info(self.config_file+": "+str(order))
     elif action == 'sell':
       if currency not in self.selling_currency:
         logging.debug (self.config_file+": Not selling")
@@ -145,4 +146,5 @@ class cbpro_account:
         return
       logging.info (self.config_file+": Selling "+str(available)+" of "+currency+" at "+str(current_price)+" (dca="+str(dca_price)+"). Total: $"+str(current_price * available))
       if allowTrades == True:
-        print (self.get_client().place_market_order(product_id=product_id,side='sell',size=available))
+        order = self.get_client().place_market_order(product_id=product_id,side='sell',size=available)
+        logging.info(self.config_file+": "+str(order))
