@@ -192,7 +192,7 @@ def main_func(clients):
     print (product_id,"->",action)
     currencies = product_id.split('-')
     for client in clients:
-      client.do_transaction(currencies[1],currencies[0],action)
+      client.do_transaction(currencies[1],currencies[0],action,True)
 
 def print_portfolio(cbclients):
   for cbclient in cbclients:
