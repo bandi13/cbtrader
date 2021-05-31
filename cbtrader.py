@@ -54,8 +54,8 @@ def train_perceptron(NUMPOINTS=21, sensitivity=0.02):
 
   n=NN(inputs, outputs, sensitivity=sensitivity)
   predictions = n.predict(inputs)
-  logging.info("Predicted:"+str(predictions.T))
-  logging.info("Expected: "+str(outputs.T))
+  logging.debug("Predicted:"+str(predictions.T))
+  logging.debug("Expected: "+str(outputs.T))
   for i in range(len(outputs.T)):
     if abs(outputs.T[0][i] - predictions.T[0][i]) > sensitivity * 2:
       logging.warning("Training failure: i="+str(i))
@@ -145,12 +145,12 @@ def get_action(cbpro_public_client,product_id, nn, NUMPOINTS, doSavePlot=False):
   y = column(rates,3)[-NUMPOINTS:]
 
   action = buy_sell(nn, y, 0.06)
-  logging.info("y ("+str(len(y))+"):"+str(y))
-  logging.info("action: " + action)
+  logging.debug("y ("+str(len(y))+"):"+str(y))
+  logging.debug("action: " + action)
 
   if doSavePlot == True:
     x = column(rates,0)[-NUMPOINTS:]
-    logging.info("x ("+str(len(x))+"):"+str(x))
+    logging.debug("x ("+str(len(x))+"):"+str(x))
     save_plot(x,y,'prices-'+product_id+'.png',False)
 
   return action
@@ -218,4 +218,5 @@ cbclients = []
 for filename in os.listdir("client_configs"):
   cbclients.append(cbpro_account("client_configs/"+filename))
 main_func(cbclients)
-print_portfolio(cbclients)
+if logging.getLogger().isEnabledFor(logging.INFO):
+  print_portfolio(cbclients)
