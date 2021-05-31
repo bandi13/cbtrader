@@ -199,7 +199,7 @@ def print_portfolio(cbclients):
     print ("Client: " + cbclient.get_config_file_name())
     baseFunds = cbclient.get_base_funds()
     print ("Funds available: "+str(cbclient.round_fiat_currency(baseFunds))+cbclient.get_base_currency())
-    portfolioValue = cbclient.get_investment_value() + baseFunds
+    portfolioValue = cbclient.get_portfolio_value()
     print ("Starting portfolio: "+str(cbclient.round_fiat_currency(portfolioValue))+cbclient.get_base_currency())
     accounts = cbclient.get_client().get_accounts()
     for acct in accounts:

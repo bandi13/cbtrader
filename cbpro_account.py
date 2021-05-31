@@ -14,10 +14,17 @@ class cbpro_account:
     self.url = url
     self.client = cbpro.AuthenticatedClient(self.key, self.secret, self.passphrase, api_url=self.url)
     self.account_ids = dict()
+    self.dca_price_cache = dict()
     accounts = self.client.get_accounts()
+    total = 0
     for acct in accounts:
       self.account_ids[acct['currency']] = acct['id']
-    self.dca_price_cache = dict()
+      if float(acct['available']) != 0 and (acct['currency'] in self.buying_currency or acct['currency'] in self.selling_currency):
+        dca_price = self.get_dca_price(acct['currency'],float(acct['available']))
+        total = total + float(acct['available'])*dca_price
+      elif acct['currency'] == self.base_currency:
+        total = total + float(acct['available'])
+    self.portfolio_value = total
 
   def get_config_file_name(self):
     return self.config_file
@@ -89,14 +96,8 @@ class cbpro_account:
   def get_available(self,currency):
     return float(self.get_client().get_account(self.account_ids[currency])['available'])
 
-  def get_investment_value(self):
-    accounts = self.get_client().get_accounts()
-    total = 0
-    for acct in accounts:
-      if float(acct['available']) != 0 and (acct['currency'] in self.buying_currency or acct['currency'] in self.selling_currency):
-        dca_price = self.get_dca_price(acct['currency'],float(acct['available']))
-        total = total + float(acct['available'])*dca_price
-    return total
+  def get_portfolio_value(self):
+    return self.portfolio_value
 
   def is_investing(self, base, currency):
     return base == self.base_currency and (currency in self.buying_currency or currency in self.selling_currency)
@@ -116,8 +117,7 @@ class cbpro_account:
         return
       available = self.get_available(currency)
       dca_price = self.get_dca_price(currency, available)
-      portfolio_value = self.get_investment_value() + self.get_base_funds()
-      if 100 * (available * dca_price) / portfolio_value > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 20% of portfolio
+      if 100 * (available * dca_price) / self.portfolio_value > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 20% of portfolio
         logging.debug (self.config_file+": Have too many")
         return
       current_price = self.get_current_price(product_id)
