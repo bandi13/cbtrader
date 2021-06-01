@@ -5,6 +5,7 @@ from dotenv import get_key
 class cbpro_account:
   def __init__(self,config_file,url="https://api.pro.coinbase.com"):
     self.config_file = config_file
+    self.logger = logging.getLogger("cbpro_account("+config_file+")")
     self.passphrase = get_key(config_file,'CB_PASSPHRASE')
     self.secret = get_key(config_file,'CB_SECRET')
     self.key = get_key(config_file, 'CB_KEY')
@@ -68,12 +69,12 @@ class cbpro_account:
     total_size = 0
     for fill in fills:
       if 'message' in fill:
-        logging.error(self.config_file+": Can not get_fills("+currency+'-'+self.base_currency+')')
+        self.logger.error("Can not get_fills("+currency+'-'+self.base_currency+')')
         break
       if total_size >= available:
         break
       if fill['side'] == "buy":
-        logging.debug(self.config_file+": bought " + currency + ": " + fill['size'] + " @ " + fill['price'] + " + " + fill['fee'])
+        self.logger.debug("Bought " + currency + ": " + fill['size'] + " @ " + fill['price'] + " + " + fill['fee'])
         curSize = float(fill['size'])
         if curSize > available - total_size:
           curSize = available - total_size
@@ -81,12 +82,12 @@ class cbpro_account:
         total_size = total_size + curSize
 
     if total_size < available:
-      logging.warning(self.config_file+": Unreliable price for "+currency+". Using $0.")
+      self.logger.warning("Unreliable price for "+currency+". Using $0.")
       self.dca_price_cache[cache_key] = 0
       return 0
 
     dca_price = self.round_fiat_currency(cost / total_size)
-    logging.info(self.config_file+": Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(total_size) + ". Available=" + str(available) + ". DCAPrice=" + str(dca_price))
+    self.logger.debug("Currency=" + currency + ". Cost=" + str(cost) + ". TotalSize=" + str(total_size) + ". Available=" + str(available) + ". DCAPrice=" + str(dca_price))
     self.dca_price_cache[cache_key] = dca_price
     return dca_price
 
@@ -104,47 +105,47 @@ class cbpro_account:
 
   def do_transaction(self, base, currency, action, allowTrades=False):
     if not self.is_investing(base, currency):
-      logging.debug (self.config_file+": Not investing")
+      self.logger.debug ("Not investing")
       return
     product_id = currency+'-'+self.base_currency
     if action == 'buy':
       if currency not in self.buying_currency:
-        logging.debug (self.config_file+": Not buying")
+        self.logger.debug ("Not buying")
         return
       baseFunds = self.get_base_funds()
       if baseFunds < 10: # Not enough to invest
-        logging.debug (self.config_file+": Too poor")
+        self.logger.debug ("Too poor")
         return
       available = self.get_available(currency)
       dca_price = self.get_dca_price(currency, available)
       if 100 * (available * dca_price) / self.portfolio_value > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 20% of portfolio
-        logging.debug (self.config_file+": Have too many")
+        self.logger.debug ("Have too many")
         return
       current_price = self.get_current_price(product_id)
       if dca_price != 0 and current_price > dca_price: # Only buy if cheaper than before
-        logging.debug (self.config_file+": Not good price")
+        self.logger.debug ("Not good price")
         return
       amount = round(0.01 * baseFunds,2)
       if amount < 10: # Minimum amount
         amount = 10
-      logging.info (self.config_file+": Buying "+str(amount)+self.base_currency+" of "+currency+" at "+str(current_price))
+      self.logger.info ("Buying "+str(amount)+self.base_currency+" of "+currency+" at "+str(current_price))
       if allowTrades == True:
         order = self.get_client().place_market_order(product_id=product_id,side='buy',funds=amount)
-        logging.info(self.config_file+": "+str(order))
+        self.logger.info(str(order))
     elif action == 'sell':
       if currency not in self.selling_currency:
-        logging.debug (self.config_file+": Not selling")
+        self.logger.debug ("Not selling")
         return
       available = self.get_available(currency)
       if available == 0: # Has no money in it
-        logging.debug (self.config_file+": None available to sell")
+        self.logger.debug ("None available to sell")
         return
       current_price = self.get_current_price(product_id)
       dca_price = self.get_dca_price(currency,available)
       if current_price <= dca_price*1.1: # Not Worthwhile selling (with fees)
-        logging.debug (self.config_file+": Not Worthwhile")
+        self.logger.debug ("Not Worthwhile")
         return
-      logging.info (self.config_file+": Selling "+str(available)+" of "+currency+" at "+str(current_price)+" (dca="+str(dca_price)+"). Total: $"+str(current_price * available))
+      self.logger.info ("Selling "+str(available)+" of "+currency+" at "+str(current_price)+" (dca="+str(dca_price)+"). Total: $"+str(current_price * available))
       if allowTrades == True:
         order = self.get_client().place_market_order(product_id=product_id,side='sell',size=available)
-        logging.info(self.config_file+": "+str(order))
+        self.logger.info(str(order))
