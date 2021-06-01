@@ -209,7 +209,7 @@ def print_portfolio(cbclients):
         value = available*dcaPrice
         print (acct['currency']+": "+acct['available']+" @ "+str(dcaPrice)+" = "+str(cbclient.round_fiat_currency(value))+" ("+str(round(100 * value / portfolioValue,2))+"%)")
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
