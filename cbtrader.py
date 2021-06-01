@@ -188,7 +188,7 @@ def main_func(clients):
   product_ids = sorted(set(product_ids)) # create unique list
 
   for product_id in product_ids:
-    action = get_action(cbpro_public_client, product_id, n, n.getNumPoints(), False)
+    action = get_action(cbpro_public_client, product_id, n, n.getNumPoints(), logging.getLogger().isEnabledFor(logging.DEBUG))
     print (product_id,"->",action)
     currencies = product_id.split('-')
     for client in clients:
