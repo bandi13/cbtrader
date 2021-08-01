@@ -155,7 +155,7 @@ def get_action(cbpro_public_client,product_id, nn, NUMPOINTS, doSavePlot=False):
 
   return action
 
-def main_func(clients):
+def main_func(clients, buys=False):
   logging.info("Loading Perceptron...")
   try:
     import cPickle as pickle
@@ -181,7 +181,7 @@ def main_func(clients):
 
   cbpro_public_client = cbpro.PublicClient()
 
-  logging.info("Calculating actions...")
+  logging.info("Calculating actions...buys="+str(buys))
   product_ids = []
   for client in clients:
     product_ids.extend(client.get_product_ids())
@@ -190,9 +190,12 @@ def main_func(clients):
   for product_id in product_ids:
     action = get_action(cbpro_public_client, product_id, n, n.getNumPoints(), logging.getLogger().isEnabledFor(logging.DEBUG))
     print (product_id,"->",action)
-    currencies = product_id.split('-')
-    for client in clients:
+    if (action == "buy" and buys == True) or action != "buy":
+      currencies = product_id.split('-')
+      for client in clients:
       client.do_transaction(currencies[1],currencies[0],action,True)
+    else:
+      logging.info("Buys disallowed")
 
 def print_portfolio(cbclients):
   for cbclient in cbclients:
@@ -217,6 +220,14 @@ np.set_printoptions(formatter={'float_kind':float_formatter})
 cbclients = []
 for filename in os.listdir("client_configs"):
   cbclients.append(cbpro_account("client_configs/"+filename))
-main_func(cbclients)
+
+import argparse
+
+my_parser = argparse.ArgumentParser()
+my_parser.add_argument('-b', '--buys', action='store_true')
+args = my_parser.parse_args()
+
+main_func(cbclients,args.buys)
+
 if logging.getLogger().isEnabledFor(logging.INFO):
   print_portfolio(cbclients)
