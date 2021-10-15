@@ -193,7 +193,7 @@ def main_func(clients, buys=False):
     if (action == "buy" and buys == True) or action != "buy":
       currencies = product_id.split('-')
       for client in clients:
-      client.do_transaction(currencies[1],currencies[0],action,True)
+        client.do_transaction(currencies[1],currencies[0],action,True)
     else:
       logging.info("Buys disallowed")
 
