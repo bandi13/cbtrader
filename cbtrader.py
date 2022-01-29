@@ -194,8 +194,6 @@ def main_func(clients, buys=False):
       currencies = product_id.split('-')
       for client in clients:
         client.do_transaction(currencies[1],currencies[0],action,True)
-    else:
-      logging.info("Buys disallowed")
 
 def print_portfolio(cbclients):
   for cbclient in cbclients:

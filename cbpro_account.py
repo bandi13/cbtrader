@@ -118,6 +118,9 @@ class cbpro_account:
         return
       available = self.get_available(currency)
       dca_price = self.get_dca_price(currency, available)
+      if dca_price == 0:
+        self.logger.debug ("No DCA price. Aborting")
+        return
       if 100 * (available * dca_price) / self.portfolio_value > 2 * 100 / len(self.buying_currency): # No one product_id may be more than 20% of portfolio
         self.logger.debug ("Have too many")
         return
